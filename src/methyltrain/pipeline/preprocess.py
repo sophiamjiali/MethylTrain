@@ -9,6 +9,7 @@
 import anndata as ad
 import numpy as np
 
+from inmoose.pycombat import pycombat_norm
 from typing import Dict
 
 def impute(adata: ad.AnnData):
@@ -55,9 +56,49 @@ def impute(adata: ad.AnnData):
 
 
 
-def batch_correction():
-    return
-# batch effect correction using ComBat (AFTER COHORT AGGREGATION)
+def batch_correction(adata: ad.AnnData) -> ad.AnnData:
+    """
+    Performs batch correction on an AnnData object using the InMoose ComBat 
+    function (pycombat_norm).
+
+    Correction is applied using the `project_id` column in .obs. The corrected matrix is stored in in-place for simplicity (overwrites .X).
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object representing a project or cohort's optionally quality 
+        controlled and/pr preprocessed DNA methylation data at the CpG matrix 
+        level. The object must include:
+        - .obs['project_id] : project of origin for each sample
+        - .X : probe-level beta values (dense, not sparse)
+    
+    Returns
+    -------
+    adata : ad.AnnData
+        AnnData object representing a project's batch-corrected DNA methylation data at the CpG probe matrix level with updated metadata.
+
+    Raises
+    ------
+    ValueError
+        If NaNs exist in the AnnData object (batch correction requires none).
+    """
+
+    X = np.array(adata.X)
+
+    # Ensure no NaNs remain in the AnnData object
+    if np.isnan(X).any():
+        raise ValueError("Batch correction requires no Nans. Please impute "
+                         "or remove missing values first.")
+    
+    # Apply ComBat from the inmoose package
+    batch = adata.obs['project_id'].values
+    X = pycombat_norm(X, batch)
+    adata.X = X
+
+    adata.uns['preprocessing_steps'].append("batch_correction")
+
+    return adata
+
 
 
 def winsorize_data(adata: ad.AnnData, config: Dict) -> ad.AnnData:

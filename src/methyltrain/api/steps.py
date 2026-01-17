@@ -17,7 +17,7 @@ from pathlib import Path
 
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata, clean_manifest
-from ..pipeline.preprocess import impute
+from ..pipeline.preprocess import impute, batch_correction
 from ..fs.layout import ProjectLayout
 from ..utils.utils import load_sample, load_annotation
 from ..constants import (
@@ -161,13 +161,11 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     -------
     ad.AnnData
         AnnData object representing a project's preprocessed DNA methylation 
-        data at the gene matrix level with updated metadata.
+        data at the CpG probe matrix level with updated metadata.
     """
 
     # Perform each preprocessing step if toggled by the user-configurations
-    toggles = config.get('toggles', {})
-    
-    if toggles.get('sample_qc', True):
+    if config.get('toggles', {}).get('sample_qc', True):
         adata = impute(adata)
 
     adata.uns['state'] = 'processed'
@@ -239,13 +237,20 @@ def aggregate_cohort(cohort_id: str, adatas: List[ad.AnnData]) -> ad.AnnData:
     return cohort_adata
 
 
-def cohort_batch_correction(adata: ad.AnnData) -> ad.AnnData:
+def cohort_batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
     Corrects batch effects across multiple projects aggregated into a CpG 
     matrix cohort.
     """
 
+    # Optionally perform batch correction on the cohort if toggled
+    if config.get('toggles', {}).get('batch_correction', True):
+        adata = batch_correction(adata)
+
+    adata.uns['state'] = 'processed'
+
     return ad.AnnData()
+
 
 def aggregate_genes(adata: ad.AnnData) -> ad.AnnData:
     """

@@ -44,8 +44,17 @@ manifest_27k <- tibble(
   has_cpg_snp       = FALSE,
   has_sbe_snp       = FALSE,
   is_cross_reactive = FALSE,
-  is_multi_mapped   = FALSE
+  is_multi_mapped   = FALSE,
+  Distance_to_TSS = as.numeric(anno_27k$Distance_to_TSS),
 )
+
+# Gene annotations as functional flags based on Distance_to_TSS
+manifest_27k <- manifest_27k %>%
+  mutate(
+    TSS200 = Distance_to_TSS >= -200 & Distance_to_TSS <= 200,
+    TSS1500 = Distance_to_TSS >= -1500 & Distance_to_TSS < -200,
+    gene_body = Distance_to_TSS > 200
+  )
 
 write_csv(manifest_27k, "illumina27k_annotation_hg19.csv")
 
@@ -77,7 +86,7 @@ manifest_450k <- manifest_450k %>%
 
 # Extract multi-mapped probes from the bowtie annotation
 multi_450k <- read_tsv(
-  "raw/HumanMethylation450_15017482_v.1.1_hg19_bowtie_multimap.txt",
+  "HumanMethylation450_15017482_v.1.1_hg19_bowtie_multimap.txt",
   col_names = "probe_id",
   show_col_types = FALSE
 )
@@ -85,6 +94,14 @@ multi_450k <- read_tsv(
 manifest_450k <- manifest_450k %>%
   mutate(
     is_multi_mapped = probe_id %in% multi_450k$probe_id
+  )
+
+# Gene annotations as functional flags based on Distance_to_TSS
+manifest_450k <- manifest_450k %>%
+  mutate(
+    TSS200 = grepl("TSS200", anno_450k$UCSC_RefGene_Group, ignore.case = TRUE),
+    TSS1500 = grepl("TSS1500", anno_450k$UCSC_RefGene_Group, ignore.case = TRUE),
+    gene_body = grepl("Body", anno_450k$UCSC_RefGene_Group, ignore.case = TRUE),
   )
 
 write_csv(
@@ -119,6 +136,14 @@ manifest_epic <- manifest_epic %>%
     is_multi_mapped   = FALSE
   )
 
+# Gene annotations as functional flags based on Distance_to_TSS
+manifest_epic <- manifest_epic %>%
+  mutate(
+    TSS200 = grepl("TSS200", anno_epic$UCSC_RefGene_Group, ignore.case = TRUE),
+    TSS1500 = grepl("TSS1500", anno_epic$UCSC_RefGene_Group, ignore.case = TRUE),
+    gene_body = grepl("Body", anno_epic$UCSC_RefGene_Group, ignore.case = TRUE),
+  )
+
 write_csv(manifest_epic, "illuminaEPIC_annotation_hg19.csv")
 
 # =====| Liftover hg38 |========================================================
@@ -127,7 +152,7 @@ write_csv(manifest_epic, "illuminaEPIC_annotation_hg19.csv")
 # gunzip("raw/hg19ToHg38.over.chain.gz", 
 #        destname = "raw/hg19ToHg38.over.chain", 
 #        overwrite = TRUE)
-chain <- import.chain("raw/hg19ToHg38.over.chain")
+chain <- import.chain("hg19ToHg38.over.chain")
 
 # Initialize each hg19 annotation as a GRanges object
 gr_hg19_27k <- GRanges(

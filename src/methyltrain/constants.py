@@ -21,17 +21,17 @@ GENOME_BUILD_TYPES = ["hg19", "hg38"]
 # =====| Resource Paths |=======================================================
 
 ANNOTATION_hg19_PATHS = {
-    "Illumina Human Methylation 27": "data/annotations/illumina27k_annotation_hg19.parquet",
+    "Illumina Human Methylation 27": "resources/illumina27k_annotation_hg19.parquet",
 
-    "Illumina Human Methylation 450": "data/annotations/illumina450k_annotation_hg19.parquet",
+    "Illumina Human Methylation 450": "resources/illumina450k_annotation_hg19.parquet",
 
-    "Illumina Human Methylation Epic": "data/annotations/illuminaEPIC_annotation_hg19.parquet"
+    "Illumina Human Methylation Epic": "resources/illuminaEPIC_annotation_hg19.parquet"
 }
 
 ANNOTATION_hg38_PATHS = {
-    "Illumina Human Methylation 27": "data/annotations/illumina27k_annotation_hg38.parquet",
+    "Illumina Human Methylation 27": "resources/illumina27k_annotation_hg38.parquet",
 
-    "Illumina Human Methylation 450": "data/annotations/illumina450k_annotation_hg38.parquet",
+    "Illumina Human Methylation 450": "resources/illumina450k_annotation_hg38.parquet",
 
-    "Illumina Human Methylation Epic": "data/annotations/illuminaEPIC_annotation_hg38.parquet"
+    "Illumina Human Methylation Epic": "resources/illuminaEPIC_annotation_hg38.parquet"
 }

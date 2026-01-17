@@ -36,7 +36,8 @@ class CohortLayout:
         # ==================
 
 
-
+    def initialize(self):
+        return
 
 
 

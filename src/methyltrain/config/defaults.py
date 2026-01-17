@@ -22,22 +22,13 @@ DEFAULT_CONFIG = {
 
     "toggles": {
 
-        "average_duplicates": True,   # Average duplicate samples, or take first
+        "sample_qc": True,
+        "probe_qc": True,
+        "imputation": True,          # Perform imputation, else default to 0
+        "batch_correction": True,    # Perform batch correction upon cohort
+        "gene_aggregation": True,    # Aggregates cohort beta values to genes
+        "winsorization": True        # Clip extreme values for ML stability
 
-        "quality_control": {
-            "sample_qc": True,
-            "probe_qc": True
-        },
-
-        "preprocessing": {
-            "imputation": True,       # Perform imputation, else default to 0
-            "winsorization": True    
-        },
-
-        "aggregation": {
-            "batch_correction": True    # Perform batch correction upon cohort
-        }
-        
     },
 
     "downloading": {
@@ -64,7 +55,6 @@ DEFAULT_CONFIG = {
     },
 
     "preprocessing": {
-        "imputation": "lalalalalalallalalalalalalalalallalalalalalalalal",
-        "clip_values": [0.001, 99.99] # fix
+        "clip_values": [0.00001, 99.9999]
     }     
 }

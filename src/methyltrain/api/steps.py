@@ -17,6 +17,7 @@ from pathlib import Path
 
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata, clean_manifest
+from ..pipeline.preprocess import impute
 from ..fs.layout import ProjectLayout
 from ..utils.utils import load_sample, load_annotation
 from ..constants import (
@@ -117,17 +118,19 @@ def quality_control(adata: ad.AnnData,
     annotation = load_annotation(config)
 
     # Perform each quality-control step if toggled by the user-configurations
-    qc_cfg = config.get('toggles', {}).get('quality_control', {})
+    toggles = config.get('toggles', {})
     
-    if qc_cfg.get('sample_qc', True):
+    if toggles.get('sample_qc', True):
         adata = sample_qc(adata, config)
     
-    if qc_cfg.get('probe_qc', True):
+    if toggles.get('probe_qc', True):
         adata = probe_qc(adata, annotation, config)
 
     # Clean the metadata and manifest; if no QC performed, same as raw
     clean_metadata(adata, layout)
     clean_manifest(adata, layout)
+
+    adata.uns['state'] = 'processed'
 
     return adata
 
@@ -142,7 +145,6 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     configurations, including the following options in order:
     
     1. Imputation of missing values
-    2. Winsorization (of values exactly zero or one)
 
     Note that batch effect correction is optionally performed after multiple 
     projects have been aggregated into a cohort.
@@ -162,33 +164,104 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         data at the gene matrix level with updated metadata.
     """
 
-    # add to adata.uns[...] (see load_raw_project)
+    # Perform each preprocessing step if toggled by the user-configurations
+    toggles = config.get('toggles', {})
+    
+    if toggles.get('sample_qc', True):
+        adata = impute(adata)
 
-    # ==================
-    # under construction
-    # ==================
+    adata.uns['state'] = 'processed'
+
+    return adata
 
 
-    return ad.AnnData()
-
-
-def aggregate(adatas: List[ad.AnnData]) -> ad.AnnData:
+def aggregate_cohort(cohort_id: str, adatas: List[ad.AnnData]) -> ad.AnnData:
     """
-    Aggregates multiple project AnnData objects into a single cohort AnnData 
-    object. Takes the common set of genes from all projects.
+    Aggregates multiple project AnnData objects at the CpG probe x sample 
+    matrix level into a single cohort AnnData object. Takes the common set of 
+    CpG probes from all projects.
+
+    Resolves dataset-level metadata such that `.uns` is a dictionary with 
+    project names as keys, and project-level metadata as their values. 
+    Cohort-level metadata is stored in a flat structure.
 
     Parameters
     ----------
+    cohort_id : str
+        Unique identifier for the aggregated cohort
     adatas : List of ad.AnnData
-        List of project AnnData objects.
+        List of project AnnData objects at the CpG probe x sample level, each representing a single project. Each object must have:
+        - .uns['project_id'] : unique project name
+        - .uns['level'] : 'project' or 'cohort'
+        - .uns['data_type'] : 'cpg_matrix' or 'gene_matrix'
+        - .uns['state'] : 'raw' or 'processed'
+        - .uns['preprocessing_steps'] : QC and processing steps performed
 
     Returns
     -------
     ad.AnnData
-        Aggregated cohort AnnData object.
+        Aggregated cohort AnnData object at the CpG probe x sample level with:
+        - cohort.obs['project_id'] : indicating original project per sample
+        - cohort.uns['projects'] : dict of per-project .uns metadata
+        - cohort.uns['cohort_id'] : unique cohort name
+        - cohort.uns['level'] : 'cohort'
+        - cohort.uns['data_type'] : 'cpg_matrix' or 'gene_matrix'
+        - cohort.uns['state'] : 'raw' or 'processed'
+        - cohort.uns['preprocessing_steps'] : processing steps performed
     """
 
-    return ad.concat(adatas, join = "inner")
+    # Collect per-project .uns metadata
+    projects_uns = {}
+    for adata in adatas:
+
+        project_name = adata.uns.get('project_id')
+        project_metadata = {k: v for k, v in adata.uns.items() 
+                            if k != 'project_id'}
+        
+        projects_uns[project_name] = project_metadata
+
+    # Concatenate projects, keeping the common set of CpG probes/genes
+    cohort_adata = ad.concat(
+        adatas,
+        join = "inner",
+        label = "project_id",
+        keys = [adata.uns['project_id'] for adata in adatas]
+    )
+
+    # Populate cohort-level metadata
+    cohort_adata.uns['projects'] = projects_uns
+    cohort_adata.uns['cohort_id'] = cohort_id
+    cohort_adata.uns['level'] = 'cohort'
+    cohort_adata.uns['data_type'] = adatas[0].uns['data_type']
+    cohort_adata.uns['state'] = 'raw'
+    cohort_adata.uns['preprocessing_steps'] = []
+
+    return cohort_adata
+
+
+def cohort_batch_correction(adata: ad.AnnData) -> ad.AnnData:
+    """
+    Corrects batch effects across multiple projects aggregated into a CpG 
+    matrix cohort.
+    """
+
+    return ad.AnnData()
+
+def aggregate_genes(adata: ad.AnnData) -> ad.AnnData:
+    """
+    Aggregates a project or cohort AnnData object at the CpG probe x sample 
+    matrix level to the gene-level. 
+    """
+
+    return ad.AnnData()
+
+def winsorize(adata: ad.AnnData) -> ad.AnnData:
+    """
+    Clips data of an AnnData object either at the CpG probe-level or gene-level.
+    
+    """
+
+    return ad.AnnData()
 
 
 def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData, 
@@ -321,6 +394,8 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     )
 
     # Initialize global metadata for the project
+    adata.uns['project_id'] = layout.project_name
+    adata.uns['level'] = "project"
     adata.uns['data_type'] = "cpg_matrix"
     adata.uns['state'] = "raw"
     adata.uns['preprocessing_steps'] = []

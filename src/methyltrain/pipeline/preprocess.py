@@ -54,14 +54,16 @@ def impute(adata: ad.AnnData):
     return adata
 
 
-def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
-    "impute based on the configurations"
 
-    return ad.AnnData()
-
-
-
-
-def correct_batch_effects():
+def batch_correction():
     return
 # batch effect correction using ComBat (AFTER COHORT AGGREGATION)
+
+
+def winsorize_data(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+    """
+    Winsorizes gene-level beta values 
+    
+    """
+
+    return ad.AnnData()

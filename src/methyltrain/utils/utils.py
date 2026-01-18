@@ -52,14 +52,16 @@ def load_sample(file: Path) -> pd.DataFrame:
     return pd.read_parquet(file)
 
 
-def load_annotation(config: Dict) -> pd.DataFrame:
+def load_annotation(array_type: str, genome_build: str) -> pd.DataFrame:
     """
     Load an Illumina annotation based on array type and genome build.
 
     Parameters
     ----------
-    config : dict
-        Configuration dictionary controlling workflow steps.
+    array_type : str
+        The project's DNA methylation array type (e.g. Illumina 27K, 450K, EPIC)
+    genome_build : str
+        The project's genome build (e.g. hg19, hg38)
 
     Returns
     -------
@@ -72,9 +74,6 @@ def load_annotation(config: Dict) -> pd.DataFrame:
         If the array type or genome build provided in the user-configurations 
         is not valid.
     """
-
-    array_type = config.get('array_type', '')
-    genome_build = config.get('genome_build', '')
 
     # Verify the array type and genome build provided are valid
     if array_type not in ARRAY_TYPES:

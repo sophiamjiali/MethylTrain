@@ -38,6 +38,9 @@ class CohortLayout:
 
     def initialize(self):
         return
+    
+    def validate(self):
+        return
 
 
 

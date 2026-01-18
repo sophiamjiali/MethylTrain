@@ -84,7 +84,7 @@ def prepare_cohort(config: Dict,
                       for path in layout.project_list]
     
     # Aggregate the projects into a cohort AnnData object
-    cohort_adata = aggregate_cohort(project_adatas)
+    cohort_adata = aggregate_cohort(layout, project_adatas)
 
     # Perform batch effect correction across datasets if toggled
     if config.get('toggles', {}).get('batch_correction', True):

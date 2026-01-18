@@ -15,6 +15,13 @@ ARRAY_TYPES = [
     "Illumina Human Methylation Epic" # later add v2
 ]
 
+# Defines resolution hierarchy
+ARRAY_PRIORITY = [
+    "Illumina Human Methylation Epic",
+    "Illumina Human Methylation 450",
+    "Illumina Human Methylation 27"
+]
+
 # Supported Genome Builds; aligns with TCGA metadata case and spelling
 GENOME_BUILD_TYPES = ["hg19", "hg38"]
 

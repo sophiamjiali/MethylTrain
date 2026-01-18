@@ -56,5 +56,9 @@ DEFAULT_CONFIG = {
 
     "preprocessing": {
         "clip_values": [0.00001, 99.9999]
-    }     
+    },
+
+    "gene_aggregation": {
+        "regions": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body
+    }
 }

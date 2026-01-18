@@ -18,12 +18,9 @@ from pathlib import Path
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata, clean_manifest
 from ..pipeline.preprocess import impute, batch_correction
-from ..fs.layout import ProjectLayout
+from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
+from ..fs.layout import ProjectLayout, CohortLayout
 from ..utils.utils import load_sample, load_annotation
-from ..constants import (
-    ARRAY_TYPES,
-    GENOME_BUILD_TYPES
-)
 
 
 # =====| Workflow |=============================================================
@@ -115,7 +112,8 @@ def quality_control(adata: ad.AnnData,
     """
 
     # Load the appropriate annotation provided by the package, else raises error
-    annotation = load_annotation(config)
+    annotation = load_annotation(array_type = adata.uns['array_type'], 
+                                 genome_build = adata.uns['genome_build'])
 
     # Perform each quality-control step if toggled by the user-configurations
     toggles = config.get('toggles', {})
@@ -173,7 +171,8 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     return adata
 
 
-def aggregate_cohort(cohort_id: str, adatas: List[ad.AnnData]) -> ad.AnnData:
+def aggregate_cohort(layout: CohortLayout, 
+                     adatas: List[ad.AnnData]) -> ad.AnnData:
     """
     Aggregates multiple project AnnData objects at the CpG probe x sample 
     matrix level into a single cohort AnnData object. Takes the common set of 
@@ -185,8 +184,8 @@ def aggregate_cohort(cohort_id: str, adatas: List[ad.AnnData]) -> ad.AnnData:
 
     Parameters
     ----------
-    cohort_id : str
-        Unique identifier for the aggregated cohort
+    layout : CohortLayout
+        Layout object detailing a cohort.
     adatas : List of ad.AnnData
         List of project AnnData objects at the CpG probe x sample level, each representing a single project. Each object must have:
         - .uns['project_id'] : unique project name
@@ -208,29 +207,13 @@ def aggregate_cohort(cohort_id: str, adatas: List[ad.AnnData]) -> ad.AnnData:
         - cohort.uns['preprocessing_steps'] : processing steps performed
     """
 
-    # Collect per-project .uns metadata
-    projects_uns = {}
-    for adata in adatas:
+    layout.validate()
 
-        project_name = adata.uns.get('project_id')
-        project_metadata = {k: v for k, v in adata.uns.items() 
-                            if k != 'project_id'}
-        
-        projects_uns[project_name] = project_metadata
-
-    # Concatenate projects, keeping the common set of CpG probes/genes
-    cohort_adata = ad.concat(
-        adatas,
-        join = "inner",
-        label = "project_id",
-        keys = [adata.uns['project_id'] for adata in adatas]
-    )
+    cohort_adata = cohort_aggregation(adatas)
 
     # Populate cohort-level metadata
-    cohort_adata.uns['projects'] = projects_uns
-    cohort_adata.uns['cohort_id'] = cohort_id
+    cohort_adata.uns['cohort_id'] = layout.cohort_name
     cohort_adata.uns['level'] = 'cohort'
-    cohort_adata.uns['data_type'] = adatas[0].uns['data_type']
     cohort_adata.uns['state'] = 'raw'
     cohort_adata.uns['preprocessing_steps'] = []
 
@@ -249,16 +232,40 @@ def cohort_batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
     adata.uns['state'] = 'processed'
 
-    return ad.AnnData()
+    return adata
 
 
-def aggregate_genes(adata: ad.AnnData) -> ad.AnnData:
+def aggregate_genes(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
     Aggregates a project or cohort AnnData object at the CpG probe x sample 
-    matrix level to the gene-level. 
+    matrix level to the gene-level. Regions are used to select probes that 
+    contribute, but the final matrix has only genes as columns.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        Probe-level DNA methylation AnnData (probes x samples).
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    adata : ad.AnnData
+        Aggregated AnnData object to the gene-level.
     """
 
-    return ad.AnnData()
+    # Load the appropriate annotation object
+    annotation = load_annotation(array_type = adata.uns['array_type'], 
+                                 genome_build = adata.uns['genome_build'])
+    
+    if config.get('toggles', {}).get('gene_aggregation', True):
+        adata = gene_aggregation(adata, annotation, config)
+
+    adata.uns['state'] = 'processed'
+
+    return adata
+
+
 
 def winsorize(adata: ad.AnnData) -> ad.AnnData:
     """
@@ -400,6 +407,8 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
 
     # Initialize global metadata for the project
     adata.uns['project_id'] = layout.project_name
+    adata.uns['array_type'] = config.get('array_type', '')
+    adata.uns['genome_build'] = config.get('genome_build', '')
     adata.uns['level'] = "project"
     adata.uns['data_type'] = "cpg_matrix"
     adata.uns['state'] = "raw"

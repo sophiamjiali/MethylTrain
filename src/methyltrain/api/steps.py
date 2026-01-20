@@ -15,6 +15,11 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 from pathlib import Path
 
+from ..pipeline.download import (
+    build_manifest, 
+    build_metadata,
+    download_methylation
+)
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata, clean_manifest
 from ..pipeline.preprocess import impute, batch_correction
@@ -25,27 +30,30 @@ from ..utils.utils import load_sample, load_annotation
 
 # =====| Workflow |=============================================================
 
-def download(config: Dict, layout: ProjectLayout) -> None:
+def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
+    """
+    Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. A manifest of file IDs is created to use the `gdc-client` API, preserving metadata.
+
+    A retry loop will re-run the download command if it fails. The manifest is temporarily split into chunks to break up long API requests (main source of issues when downloading large amounts of data).
+    """
 
     # ==================
     # under construction
     # ==================
 
+    layout.validate()
 
+    # Build a manifest of available files from TCGA GDC
+    manifest = build_manifest(config)
+    status_log = download_methylation(manifest, config, layout)
+    metadata = build_metadata(config)
 
+    # Save manifest, status log, and metadata
+    manifest.to_csv(layout.raw_manifest, sep = ',', header = True, index = True)
+    status_log.to_csv(layout.status_log, sep = ',', header = True, index = True)
+    metadata.to_csv(layout.raw_metadata, sep = ',', header = True, index = True)
 
-
-
-    
-
-    # clean manifest: remove duplicates of file_id
-        # if average_duplicates is true, keep them
-    # clean manifest: only extract specific array_type
-
-    # clean the metadata and manifest for samples successfully downloaded
-
-    # save metadata and manifest as raw_* in layout
-    return
+    return status_log
 
 
 def clean_data(layout: ProjectLayout) -> None:
@@ -58,6 +66,8 @@ def clean_data(layout: ProjectLayout) -> None:
 
     # - if different aliquots map to the same sample/case, kept a representative
     #   profile by selecting the most recently generated file
+
+    # use convert_to_parquet in clean.py
 
 
     return
@@ -112,8 +122,10 @@ def quality_control(adata: ad.AnnData,
     """
 
     # Load the appropriate annotation provided by the package, else raises error
-    annotation = load_annotation(array_type = adata.uns['array_type'], 
-                                 genome_build = adata.uns['genome_build'])
+    annotation = load_annotation(
+        platform = adata.uns['platform'], 
+        reference_genome = adata.uns['reference_genome']
+    )
 
     # Perform each quality-control step if toggled by the user-configurations
     toggles = config.get('toggles', {})

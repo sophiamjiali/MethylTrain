@@ -75,6 +75,9 @@ class ProjectLayout:
     raw_manifest : str or Path, optional
         Path for the raw manifest file. Overrides `root_dir` default if 
         provided.
+    status_log: str or Path, optional
+        Path for a status log for downloading DNA methylation data using the 
+        `gdc-client` API.
     processed_metadata : str or Path, optional
         Path for the processed metadata file. Overrides `root_dir` default if 
         provided.
@@ -102,6 +105,7 @@ class ProjectLayout:
                  raw_dir: Optional[StrPath] = None,
                  raw_metadata: Optional[StrPath] = None,
                  raw_manifest: Optional[StrPath] = None,
+                 status_log: Optional[StrPath] = None,
                  processed_metadata: Optional[StrPath] = None,
                  processed_manifest: Optional[StrPath] = None,
                  processed_dir: Optional[StrPath] = None):
@@ -123,6 +127,11 @@ class ProjectLayout:
         self.raw_manifest: Path = (
             Path(raw_manifest) if raw_manifest is not None 
             else root_path / f"{project_name}_raw_manifest.csv"
+        )
+
+        self.status_log: Path = (
+            Path(status_log) if status_log is not None
+            else root_path / f"{project_name}_status_log.csv"
         )
 
         self.processed_metadata: Path = (

@@ -52,15 +52,15 @@ def load_sample(file: Path) -> pd.DataFrame:
     return pd.read_parquet(file)
 
 
-def load_annotation(array_type: str, genome_build: str) -> pd.DataFrame:
+def load_annotation(platform: str, reference_genome: str) -> pd.DataFrame:
     """
     Load an Illumina annotation based on array type and genome build.
 
     Parameters
     ----------
-    array_type : str
+    platform : str
         The project's DNA methylation array type (e.g. Illumina 27K, 450K, EPIC)
-    genome_build : str
+    reference_genome : str
         The project's genome build (e.g. hg19, hg38)
 
     Returns
@@ -76,17 +76,17 @@ def load_annotation(array_type: str, genome_build: str) -> pd.DataFrame:
     """
 
     # Verify the array type and genome build provided are valid
-    if array_type not in ARRAY_TYPES:
-        raise ValueError(f"Array type {array_type} was not recognized from the "
+    if platform not in ARRAY_TYPES:
+        raise ValueError(f"Array type {platform} was not recognized from the "
                          f"supported types: {ARRAY_TYPES}")
 
-    if genome_build not in GENOME_BUILD_TYPES:
-        raise ValueError(f"Genome build {genome_build} was not recognized from "
-                         f"the supported types: {GENOME_BUILD_TYPES}")
+    if reference_genome not in GENOME_BUILD_TYPES:
+        raise ValueError(f"Genome build {reference_genome} was not recognized "
+                         f"from the supported types: {GENOME_BUILD_TYPES}")
     
     # Load the appropriate genome build annotation path (provided by package)
-    anno_path = (ANNOTATION_hg19_PATHS[array_type] if genome_build == 'hg19' 
-                 else ANNOTATION_hg38_PATHS[array_type])
+    anno_path = (ANNOTATION_hg19_PATHS[platform] if reference_genome == 'hg19' 
+                 else ANNOTATION_hg38_PATHS[platform])
 
     return pd.read_parquet(anno_path)
 

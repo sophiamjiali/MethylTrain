@@ -6,6 +6,11 @@
 # Date:             2026-01-08
 # ==============================================================================
 
+# =====| Default Paths |========================================================
+
+# Query link for the GDC API for fetching DNA methylation beta values
+GDC_QUERY_URL = "https://api.gdc.cancer.gov/files"
+
 # =====| Supported types |======================================================
 
 # Supported array types; aligns with TCGA metadata case and spelling
@@ -23,7 +28,7 @@ ARRAY_PRIORITY = [
 ]
 
 # Supported Genome Builds; aligns with TCGA metadata case and spelling
-GENOME_BUILD_TYPES = ["hg19", "hg38"]
+GENOME_BUILD_TYPES = ["GRCh37", "GRCh38"]   # hg19 or hg38
 
 # =====| Resource Paths |=======================================================
 

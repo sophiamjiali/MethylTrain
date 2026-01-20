@@ -10,36 +10,42 @@
 
 DEFAULT_CONFIG = {
 
-    "project": "TCGA-KIRP",
-
-    "array_type": "Illumina Methylation 450" ,
-    "genome_build": "hg38",
-    "tissue_type": "tumor",
-    "tumor_descriptor": "primary",
-
-    "split": [0.60, 0.20, 0.20],
     "seed": 42,
+    "split": [0.60, 0.20, 0.20],
 
-    "toggles": {
-
-        "sample_qc": True,
-        "probe_qc": True,
-        "imputation": True,          # Perform imputation, else default to 0
-        "batch_correction": True,    # Perform batch correction upon cohort
-        "gene_aggregation": True,    # Aggregates cohort beta values to genes
-        "winsorization": True        # Clip extreme values for ML stability
-
+    "project": {
+        "project_id": "TCGA-KIRP",      # Project name (as on TCGA)
+        "sample_id":  "submitter_id",   # Project sample identifier field
+        "file_id":    "file_name",      # Project file identifier field
     },
 
-    "downloading": {
-        "sample_id": "submitter_id",    # Project sample identifier field
-        "file_id": "file_name",         # Project file identifier field
-        "metadata": [                   # Metadata fields to fetch
+    "download": {
+
+        "data_category":         "DNA Methylation",
+        "experimental_strategy": "Methylation Array",
+        "data_type":             "Methylation Beta Value",
+        "platform":              "Illumina Human Methylation 450" ,
+        "reference_genome":      "GRCh38",
+        "sample_type":           "Primary Tumor",
+
+        "metadata": [
             "lalalalalla"
         ]
     },
 
+    "toggles": {
+
+        "sample_qc":        True,
+        "probe_qc":         True,
+        "imputation":       True,    # Perform imputation, else default to 0
+        "batch_correction": True,    # Perform batch correction upon cohort
+        "gene_aggregation": True,    # Aggregates cohort beta values to genes
+        "winsorization":    True     # Clip extreme values for ML stability
+
+    },
+
     "quality_control": {
+        
         "sample_qc": {
             "missing_threshold": 0.05,
             "outlier_threshold": 3      # Number of SD beyond the global distr.

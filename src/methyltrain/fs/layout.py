@@ -69,21 +69,17 @@ class ProjectLayout:
     raw_dir : str or Path, optional
         Directory for raw methylation data. Overrides `root_dir` default if 
         provided.
-    raw_metadata : str or Path, optional
-        Path for the raw metadata file. Overrides `root_dir` default if 
+    audit_table : str or Path, optional
+        Path for the audit table file. Overrides `root_dir` if default is provided.
+    metadata : str or Path, optional
+        Path for the metadata file. Overrides `root_dir` default if 
         provided.
-    raw_manifest : str or Path, optional
+    manifest : str or Path, optional
         Path for the raw manifest file. Overrides `root_dir` default if 
         provided.
     status_log: str or Path, optional
         Path for a status log for downloading DNA methylation data using the 
         `gdc-client` API.
-    processed_metadata : str or Path, optional
-        Path for the processed metadata file. Overrides `root_dir` default if 
-        provided.
-    processed_manifest : str or Path, optional
-        Path for the processed manifest file. Overrides `root_dir` default if 
-        provided.
     processed_dir : str or Path, optional
         Directory for final processed data. Overrides `root_dir` default if 
         provided.
@@ -92,8 +88,10 @@ class ProjectLayout:
     ----------
     project_name : str
     raw_dir : Path
-    raw_metadata : Path
-    raw_manifest: Path
+    audit_table : Path
+    metadata : Path
+    manifest: Path
+    status_log : Path
     processed_metadata : Path
     processed_manifest : Path
     processed_dir : Path
@@ -103,11 +101,10 @@ class ProjectLayout:
                  project_name: str = "",
                  root_dir: Optional[StrPath] = None,
                  raw_dir: Optional[StrPath] = None,
-                 raw_metadata: Optional[StrPath] = None,
-                 raw_manifest: Optional[StrPath] = None,
+                 audit_table: Optional[StrPath] = None,
+                 metadata: Optional[StrPath] = None,
+                 manifest: Optional[StrPath] = None,
                  status_log: Optional[StrPath] = None,
-                 processed_metadata: Optional[StrPath] = None,
-                 processed_manifest: Optional[StrPath] = None,
                  processed_dir: Optional[StrPath] = None):
         
         self.project_name = project_name
@@ -119,14 +116,19 @@ class ProjectLayout:
         self.raw_dir: Path = (Path(raw_dir) if raw_dir is not None else 
                               root_path / "raw")
         
-        self.raw_metadata: Path = (
-            Path(raw_metadata) if raw_metadata is not None 
-            else root_path / f"{[project_name]}_raw_metadata.csv"
+        self.audit_table: Path = (
+            Path(audit_table) if audit_table is not None
+            else root_path / f"{project_name}_audit_table.csv"
+        )
+        
+        self.metadata: Path = (
+            Path(metadata) if metadata is not None 
+            else root_path / f"{project_name}_metadata.csv"
         )
 
-        self.raw_manifest: Path = (
-            Path(raw_manifest) if raw_manifest is not None 
-            else root_path / f"{project_name}_raw_manifest.csv"
+        self.manifest: Path = (
+            Path(manifest) if manifest is not None 
+            else root_path / f"{project_name}_manifest.csv"
         )
 
         self.status_log: Path = (
@@ -134,25 +136,14 @@ class ProjectLayout:
             else root_path / f"{project_name}_status_log.csv"
         )
 
-        self.processed_metadata: Path = (
-            Path(processed_metadata) if processed_metadata is not None 
-            else root_path / f"{[project_name]}_processed_metadata.csv"
-        )
-
-        self.processed_manifest: Path = (
-            Path(processed_manifest) if processed_manifest is not None 
-            else root_path / f"{project_name}_processed_manifest.csv"
-        )
-
         self.processed_dir: Path = (Path(processed_dir) if processed_dir is not 
                                    None else root_path / "processed")
 
-        self.paths = [self.raw_dir, self.raw_metadata, self.raw_manifest, 
-                      self.processed_metadata, self.processed_manifest, 
-                      self.processed_dir]
+        self.paths = [self.raw_dir, self.metadata, self.manifest, 
+                      self.audit_table, self.status_log, self.processed_dir]
         
-        self.files = [self.raw_metadata, self.raw_manifest, self.
-                      processed_metadata, self.processed_manifest]
+        self.files = [self.audit_table, self.metadata, self.manifest, 
+                      self.status_log]
 
 
     def initialize(self):

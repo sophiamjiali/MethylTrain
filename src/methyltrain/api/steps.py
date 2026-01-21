@@ -20,6 +20,10 @@ from ..pipeline.download import (
     build_metadata,
     download_methylation
 )
+from ..pipeline.audit import (
+    initialize_audit_table,
+    update_audit_table
+)
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata, clean_manifest
 from ..pipeline.preprocess import impute, batch_correction
@@ -32,9 +36,31 @@ from ..utils.utils import load_sample, load_annotation
 
 def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
     """
-    Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. A manifest of file IDs is created to use the `gdc-client` API, preserving metadata.
+    Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. An audit table is built to standardize all attempted files, download status, and metadata status.
 
-    A retry loop will re-run the download command if it fails. The manifest is temporarily split into chunks to break up long API requests (main source of issues when downloading large amounts of data).
+    The manifest is created using a GDC API query and resolved at the sample 
+    level. Metadata fetching is attempted only for files successfully downloaded.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary controlling workflow steps.
+    layout : ProjectLayout
+        Object representing a project dataset directory layout.
+
+    Returns
+    -------
+    pd.DataFrame
+        Audit table containing all atttempted files, download status, and 
+        metadata status. Initializes downstream preprocessing and quality 
+        control flags. All binary flags include:
+            - `downloaded`: 1 if DNA methylation file downloaded, else 0
+            - `download_attempts`: number of times a file was attempted 
+            - `download_timestamp`: timestamp of successfull download
+            - `download_status`: text description for granular logging
+            - `metadata_fetched`: 1 if metadata successfully retrieved, else 0
+            - `metadata_status`: text description for granular logging
+            - `qc_pass`: 1 if the sample passed QC, else 0
     """
 
     # ==================
@@ -43,17 +69,29 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
 
     layout.validate()
 
-    # Build a manifest of available files from TCGA GDC
+    # Build a manifest of available files and attempt to download them
     manifest = build_manifest(config)
     status_log = download_methylation(manifest, config, layout)
-    metadata = build_metadata(config)
 
-    # Save manifest, status log, and metadata
-    manifest.to_csv(layout.raw_manifest, sep = '\t', header=True, index=False)
+    # Build an audit table to hold file status flags to query for metadata
+    audit_table = initialize_audit_table(manifest, status_log)
+    metadata = build_metadata(audit_table, config)
+
+    # Update the audit table with metadata attempts (rare)
+    audit_table = update_audit_table(
+        audit_table = audit_table, 
+        ext_data = metadata,
+        flag = 'metadata',
+        field = 'status'
+    )
+
+    # Save manifest, status log, metadata, and audit table
+    manifest.to_csv(layout.manifest, sep = '\t', header=True, index=False)
     status_log.to_csv(layout.status_log, sep = '\t', header=True, index=False)
-    metadata.to_csv(layout.raw_metadata, sep = '\t', header=True, index=False)
+    metadata.to_csv(layout.metadata, sep = '\t', header=True, index=False)
+    audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=False)
 
-    return status_log
+    return audit_table
 
 
 def clean_data(layout: ProjectLayout) -> None:

@@ -14,7 +14,7 @@ import datetime
 
 import pandas as pd
 
-from typing import Dict, Union
+from typing import Dict
 
 from ..fs.layout import ProjectLayout
 from ..constants import GDC_QUERY_URL, MAX_RETRIES
@@ -24,16 +24,23 @@ from ..utils.utils import verify_md5, verify_gdc_client
 
 def build_manifest(config: Dict) -> pd.DataFrame:
     """
-    Build a GDC client manifest for a specific project and data type. Queries the GDC API for files matching the user-provided configurations and constructs a manifest compatible with `gdc-client`.
+    Build a GDC client manifest for a specific project and data type. Queries 
+    the GDC API for files matching the user-provided configurations and 
+    constructs a manifest compatible with `gdc-client`.
 
     Filtering is performed at the API level using the following criteria:
     - Case-level fields: Project ID, sample type, and open access
     - File-level fields: Data category, experimental strategy, data type, 
       platform, and reference 
 
-    The user-provided configurations specifies a single platform, reference genome, and sample type, thus the returned manifest is already resolved to the sample-level: each entry corresponds to a unique sample that meets the specified criteria. No additional deduplication by sample is required.
+    The user-provided configurations specifies a single platform, reference 
+    genome, and sample type, thus the returned manifest is already resolved to 
+    the sample-level: each entry corresponds to a unique sample that meets the 
+    specified criteria. No additional deduplication by sample is required.
 
-    Assertions are performed on the retrieved metadata to ensure that all files strictly match the requested platform, reference genome, data category, data type, experimental strategy, and sample type.
+    Assertions are performed on the retrieved metadata to ensure that all files 
+    strictly match the requested platform, reference genome, data category, 
+    data type, experimental strategy, and sample type.
 
     Parameters
     ----------
@@ -130,7 +137,8 @@ def download_methylation(manifest: pd.DataFrame,
     `max_retries` with exponential backoff. Logs per-file download status and 
     timestamp. Failures in download or MD5 verification will raise an exception.
 
-    Note that this function does not bundle the `gdc-client` API in the \package; users must install it from the official GDC site.
+    Note that this function does not bundle the `gdc-client` API in the 
+    package; users must install it from the official GDC site.
 
     Parameters
     ----------
@@ -199,6 +207,7 @@ def download_methylation(manifest: pd.DataFrame,
             'filename': filename,
             'md5': md5,
             'status': status,
+            'attempts': attempt,
             'timestamp': timestamp
         })
 
@@ -213,7 +222,7 @@ def download_methylation(manifest: pd.DataFrame,
 
 # =====| Build Metadata |=======================================================
 
-def build_metadata(config: Dict) -> pd.DataFrame:
+def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
     # Fetches metadata using gdc-client API
 
     return pd.DataFrame()

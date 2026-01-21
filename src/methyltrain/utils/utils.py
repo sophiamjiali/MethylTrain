@@ -6,6 +6,9 @@
 # Date:             2026-01-08
 # ==============================================================================
 
+import hashlib
+import shutil
+
 import numpy as np
 import pandas as pd
 
@@ -201,6 +204,20 @@ def check_dict(default: Dict[str, Any],
                         f"Key '{full_key}' must be one of the following "
                         f"supported types: {GENOME_BUILD_TYPES}"
                     )
+                
+# ======| API Utilities |=======================================================
+
+def verify_gdc_client(gdc_client_path) -> None:
+    # Verifies that the gdc-client was downloaded
+
+    if shutil.which(gdc_client_path) is None:
+        raise RuntimeError(
+            f"gdc-client executable not found at '{gdc_client_path}'.\n"
+            "Please install the official GDC Data Transfer Tool from:\n"
+            "https://gdc.cancer.gov/access-data/gdc-data-transfer-tool\n"
+            "and ensure it is available in your PATH."
+        )
+
 
 # ======| Computation Utilities |===============================================
 
@@ -208,3 +225,13 @@ def iqr_bounds(x, k):
     q1, q3 = np.nanpercentile(x, [25, 74])
     iqr = q3 - q1
     return q1 - k * iqr, q3 + k * iqr
+
+
+def verify_md5(filepath: Path, expected_md5: str) -> bool:
+    # Verify the downloaded file matches the MD5
+
+    md5_hash = hashlib.md5()
+    with filepath.open('rb') as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            md5_hash.update(chunk)
+    return md5_hash.hexdigest() == expected_md5

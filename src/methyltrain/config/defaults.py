@@ -10,6 +10,9 @@
 
 DEFAULT_CONFIG = {
 
+    # Path to the gdc-client executable
+    "gdc_client": "/Volumes/FBI_Drive/gdc-client",
+    
     "seed": 42,
     "split": [0.60, 0.20, 0.20],
 

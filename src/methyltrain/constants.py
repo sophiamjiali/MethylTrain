@@ -11,6 +11,11 @@
 # Query link for the GDC API for fetching DNA methylation beta values
 GDC_QUERY_URL = "https://api.gdc.cancer.gov/files"
 
+# =====| Downloading Logic |====================================================
+
+# Maximum number of attempts to download a file using the `gdc-client`
+MAX_RETRIES = 5
+
 # =====| Supported types |======================================================
 
 # Supported array types; aligns with TCGA metadata case and spelling

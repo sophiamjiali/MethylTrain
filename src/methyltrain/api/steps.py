@@ -49,9 +49,9 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
     metadata = build_metadata(config)
 
     # Save manifest, status log, and metadata
-    manifest.to_csv(layout.raw_manifest, sep = ',', header = True, index = True)
-    status_log.to_csv(layout.status_log, sep = ',', header = True, index = True)
-    metadata.to_csv(layout.raw_metadata, sep = ',', header = True, index = True)
+    manifest.to_csv(layout.raw_manifest, sep = '\t', header=True, index=False)
+    status_log.to_csv(layout.status_log, sep = '\t', header=True, index=False)
+    metadata.to_csv(layout.raw_metadata, sep = '\t', header=True, index=False)
 
     return status_log
 

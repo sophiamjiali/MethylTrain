@@ -50,10 +50,3 @@ def initialize_audit_table(manifest: pd.DataFrame,
     audit_table['notes'] = ""
 
     return audit_table
-
-
-def update_audit_table(audit_table: pd.DataFrame) -> pd.DataFrame:
-
-    # Update the audit table with new stage results
-
-    return pd.DataFrame()

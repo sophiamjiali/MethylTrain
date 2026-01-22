@@ -20,10 +20,7 @@ from ..pipeline.download import (
     build_metadata,
     download_methylation
 )
-from ..pipeline.audit import (
-    initialize_audit_table,
-    update_audit_table
-)
+from ..pipeline.audit import initialize_audit_table
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata, clean_manifest
 from ..pipeline.preprocess import impute, batch_correction
@@ -63,10 +60,6 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
             - `qc_pass`: 1 if the sample passed QC, else 0
     """
 
-    # ==================
-    # under construction
-    # ==================
-
     layout.validate()
 
     # Build a manifest of available files and attempt to download them
@@ -78,17 +71,16 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
     metadata = build_metadata(audit_table, config)
 
     # Update the audit table with metadata attempts (rare)
-    audit_table = update_audit_table(
-        audit_table = audit_table, 
-        ext_data = metadata,
-        flag = 'metadata',
-        field = 'status'
-    )
+    audit_table = audit_table.merge(metadata[['file_id', 'status']],
+                                    on = 'file_id', how = 'left')
+    audit_table['metadata_fetched'] = (audit_table['status']
+                                       .eq('success').astype(int))
+    audit_table['metadata_status'] = audit_table['status']
+    audit_table = audit_table.drop(columns = 'status')
+
 
     # Clean the metadata of verbose output to the standard format
-    metadata = metadata.query("status == 'success'")[
-        [list of metadata columns to keep lalalalal]
-    ]
+    metadata = metadata.loc[metadata['status'] == 'success']
 
     # Save manifest, status log, metadata, and audit table
     manifest.to_csv(layout.manifest, sep = '\t', header=True, index=False)

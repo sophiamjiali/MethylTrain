@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 from ..constants import (
     ARRAY_TYPES, 
@@ -218,6 +218,29 @@ def verify_gdc_client(gdc_client_path) -> None:
             "and ensure it is available in your PATH."
         )
 
+def extract_project_id(cases):
+    # Helper to extract nested metadata fields
+    try:
+        return (cases[0]['project'][0]['project_id'] if cases 
+                and cases[0].get('samples') else pd.NA)
+    except Exception:
+        return pd.NA
+
+def extract_sample_type(cases):
+    # Helper to extract nested metadata fields
+    try:
+        return (cases[0]['samples'][0]['sample_type'] if cases 
+                and cases[0].get('samples') else pd.NA)
+    except Exception:
+        return pd.NA
+
+def extract_submitter_id(cases):
+    # Helper to extract nested metadata fields
+    try:
+        return cases[0]['submitter_id'] if cases else pd.NA
+    except Exception:
+        return pd.NA
+        
 
 # ======| Computation Utilities |===============================================
 

@@ -18,7 +18,13 @@ from typing import Dict
 
 from ..fs.layout import ProjectLayout
 from ..constants import GDC_QUERY_URL, MAX_RETRIES
-from ..utils.utils import verify_md5, verify_gdc_client
+from ..utils.utils import (
+    verify_md5, 
+    verify_gdc_client,
+    extract_project_id,
+    extract_sample_type,
+    extract_submitter_id
+)
 
 # =====| Build Manifest |=======================================================
 
@@ -96,11 +102,12 @@ def build_manifest(config: Dict) -> pd.DataFrame:
     # Query the GDC API for methylation files with the filters
     response = requests.get(GDC_QUERY_URL, params = params)
     response.raise_for_status()
-    files_metadata = response.json()['data']['hits']
-    df = pd.DataFrame(files_metadata)
+    hits = response.json()['data']['hits']
+    
+    df = pd.DataFrame(hits)
 
     # Verify the integrity of the manifest and requested data
-    assert len(files_metadata) < params["size"], "Query may be truncated."
+    assert len(hits) < params["size"], "Query may be truncated."
     assert not df.empty, "No files returned from the GDC query."
 
     assert df['data_category'].eq(dc['data_category']).all()
@@ -218,11 +225,72 @@ def download_methylation(manifest: pd.DataFrame,
     return pd.DataFrame(status_log)
 
 
-
-
 # =====| Build Metadata |=======================================================
 
 def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
-    # Fetches metadata using gdc-client API
+    """
+    Query GDC for metadata corresponding to successfully downloaded files in the audit table. Nested fields are flattened to a single level.
+
+    Parameters
+    ----------
+    audit_table : pd.DataFrame
+        Running audit table maintaining the status of all files.
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    pd.DataFrame
+        Verbose metadata with one row per attempted file. Includes all 
+        requested GDC fields as defined in the user-provided configurations, 
+        along with a status column indicating query success or failure.
+    """
+
+    # Fetch files that were successfully downloaded
+    file_ids = audit_table.query("downloaded == 1")['id'].tolist()
+    if not file_ids: return pd.DataFrame()
+
+    # Prepare the GDC API request
+    filters = {'op': 'in','content': {'field': 'file_id', 'value': file_ids}}
+    metadata_fields = config.get('download', {}).get('metadata', [])
+
+    params = {
+        'filters': json.dumps(filters),
+        'fields': ','.join(metadata_fields),
+        'format': 'JSON',
+        'size': len(file_ids)
+    }
+
+    # Return an empty dataframe if API request fails
+    try:
+        response = requests.get(GDC_QUERY_URL, params = params)
+        response.raise_for_status()
+        hits = response.json()['data']['hits']
+
+    except Exception:
+        return pd.DataFrame({
+            'file_id': file_ids,
+            'status': ['failed'] * len(file_ids)
+        })
+    
+    # Extract nested metadata values
+    metadata = pd.DataFrame(hits)
+
+    if 'cases' in metadata.columns:
+        metadata['project_id'] = metadata['cases'].apply(extract_project_id)
+        metadata['submitter_id'] = metadata['cases'].apply(extract_submitter_id)
+        metadata['sample_type'] = metadata['cases'].apply(extract_sample_type)
+
+    # Update fetched status based on GDC response failures
+    metadata['status'] = 'success'
+
+    fetched_ids = set(metadata['file_id'])
+    missing_ids = set(file_ids) - fetched_ids
+    if missing_ids:
+        missing = pd.DataFrame({
+            'id': list(missing_ids),
+            'status': ['failed'] * len(missing_ids)
+        })
+        metadata = pd.concat([metadata, missing], ignore_index = True)
 
     return pd.DataFrame()

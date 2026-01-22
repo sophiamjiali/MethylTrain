@@ -85,6 +85,11 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
         field = 'status'
     )
 
+    # Clean the metadata of verbose output to the standard format
+    metadata = metadata.query("status == 'success'")[
+        [list of metadata columns to keep lalalalal]
+    ]
+
     # Save manifest, status log, metadata, and audit table
     manifest.to_csv(layout.manifest, sep = '\t', header=True, index=False)
     status_log.to_csv(layout.status_log, sep = '\t', header=True, index=False)

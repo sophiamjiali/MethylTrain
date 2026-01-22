@@ -12,7 +12,7 @@ DEFAULT_CONFIG = {
 
     # Path to the gdc-client executable
     "gdc_client": "/Volumes/FBI_Drive/gdc-client",
-    
+
     "seed": 42,
     "split": [0.60, 0.20, 0.20],
 
@@ -24,6 +24,7 @@ DEFAULT_CONFIG = {
 
     "download": {
 
+        # Fields to filter the DNA methylation data query
         "data_category":         "DNA Methylation",
         "experimental_strategy": "Methylation Array",
         "data_type":             "Methylation Beta Value",
@@ -31,8 +32,18 @@ DEFAULT_CONFIG = {
         "reference_genome":      "GRCh38",
         "sample_type":           "Primary Tumor",
 
+        # Fields to request from the query
         "metadata": [
-            "lalalalalla"
+            'file_id',
+            'file_name',
+            'cases.project.project_id',
+            'cases.submitter_id',
+            'cases.samples.sample_type',
+            'data_category',
+            'data_type',
+            'experimental_strategy',     # e.g. add mutational/clinical metadata
+            'platform',                  #  | to query for here for facilitating
+            'reference_genome'           #  | further downstream analysis
         ]
     },
 

@@ -153,8 +153,8 @@ class ProjectLayout:
     status_log: str or Path, optional
         Path for a status log for downloading DNA methylation data using the 
         `gdc-client` API.
-    processed_dir : str or Path, optional
-        Directory for final processed data. Overrides `root_dir` default if 
+    project_adata : str or Path, optional
+        Path to the project AnnData object. Overrides `root_dir` default if 
         provided.
 
     Attributes
@@ -165,9 +165,7 @@ class ProjectLayout:
     metadata : Path
     manifest: Path
     status_log : Path
-    processed_metadata : Path
-    processed_manifest : Path
-    processed_dir : Path
+    project_adata : Path
     """
 
     def __init__(self,
@@ -178,7 +176,7 @@ class ProjectLayout:
                  metadata: Optional[StrPath] = None,
                  manifest: Optional[StrPath] = None,
                  status_log: Optional[StrPath] = None,
-                 processed_dir: Optional[StrPath] = None):
+                 project_adata: Optional[StrPath] = None):
         
         self.project_name = project_name
         
@@ -209,11 +207,13 @@ class ProjectLayout:
             else root_path / f"{project_name}_status_log.csv"
         )
 
-        self.processed_dir: Path = (Path(processed_dir) if processed_dir is not 
-                                   None else root_path / "processed")
+        self.project_adata: Path = (
+            Path(project_adata) if project_adata is not None else 
+            root_path / f"{project_name}_adata.h5ad"
+        )
 
         self.paths = [self.raw_dir, self.metadata, self.manifest, 
-                      self.audit_table, self.status_log, self.processed_dir]
+                      self.audit_table, self.status_log, self.project_adata]
         
         self.files = [self.audit_table, self.metadata, self.manifest, 
                       self.status_log]
@@ -240,7 +240,7 @@ class ProjectLayout:
         FileNotFoundError
             If any required directory is missing.
         ValueError
-            If any of the files do not have extension `.csv`.
+            If any of the files do not have extension `.csv`. or `.h5ad`.
         """
 
         missing_paths: List[Path] = [p for p in self.paths 
@@ -255,3 +255,7 @@ class ProjectLayout:
         if incorrect_paths:
             raise ValueError(f"The following required paths must contain the `."
                              f"csv` extension: {incorrect_paths}")
+        
+        if self.project_adata.suffix != ".h5ad":
+            raise ValueError(f"The following required paths must contain the `."
+                              "h5ad` extension: {self.project_adata}")

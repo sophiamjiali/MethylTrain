@@ -22,11 +22,11 @@ from ..pipeline.download import (
 )
 from ..pipeline.audit import initialize_audit_table
 from ..pipeline.quality_control import sample_qc, probe_qc
-from ..pipeline.clean import clean_metadata, clean_manifest
+from ..pipeline.clean import clean_metadata
 from ..pipeline.preprocess import impute, batch_correction
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
-from ..fs.layout import ProjectLayout, CohortLayout
 from ..utils.utils import load_sample, load_annotation
+from ..fs.layout import ProjectLayout, CohortLayout
 
 
 # =====| Workflow |=============================================================
@@ -157,7 +157,7 @@ def clean_data(audit_table: pd.DataFrame,
 def quality_control(adata: ad.AnnData, 
                     audit_table: pd.DataFrame,
                     config: Dict, 
-                    layout: ProjectLayout) -> Tuple(ad.AnnData, pd.DataFrame):
+                    layout: ProjectLayout) -> Tuple[ad.AnnData, pd.DataFrame]:
     """
     Performes probe and/or sample quality control upon DNA methylation values 
     presented as a CpG matrix AnnData object. Returns the quality-controlled 
@@ -373,14 +373,34 @@ def aggregate_genes(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     return adata
 
 
-
-def winsorize(adata: ad.AnnData) -> ad.AnnData:
+def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
     Clips data of an AnnData object either at the CpG probe-level or gene-level.
-    
-    """
 
-    return ad.AnnData()
+    Winsorization should only be performed at the data level the machine 
+    learning model will encounter (i.e. gene-level), as clipping extreme values 
+    is only meant to improve model fidelity, rather than a standard 
+    preprocessing practice.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object representing a project's quality-controlled, 
+        preprocessed, and batch effect corrected DNA methylation data at the 
+        CpG probe- or gene-level.
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    ad.AnnData
+        The AnnData object with its beta values clipped per user configurations.
+    """
+    
+    clip_values = config.get('preprocessing', {}).get('clip_values', [0, 0])
+    adata.X = np.clip(np.array(adata.X), clip_values[0], clip_values[1])
+
+    return adata
 
 
 def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData, 
@@ -554,21 +574,20 @@ def load_processed_project(processed_file: Path | str) -> ad.AnnData:
     return ad.read_h5ad(processed_file)
 
 
-def save_project(path: Path) -> None:
+def save_project(adata: ad.AnnData, layout: ProjectLayout) -> None:
+    """
+    Saves a project AnnData object.
 
+    The data is not converted to a sparse matrix as beta values will likely see 
+    little performance benefit.
 
+    Parameters
+    ----------
+    adata : ad.AnnData
+        Project AnnData object containing DNA methylation data and metadata.
+    layout : ProjectLayout
+        Object representing a project dataset directory layout.
+    """
 
-    # ==================
-    # under construction
-    # ==================
-
-
-
-
-
-
-
-    # Saves any anndata object at a checkpoint
-
-    # convert to sparse if not already
-    return
+    layout.validate()
+    adata.write_h5ad(layout.project_adata, compression = "gzip")

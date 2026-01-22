@@ -12,7 +12,7 @@ import numpy as np
 
 from concurrent.futures import ThreadPoolExecutor
 from sklearn.model_selection import train_test_split
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from pathlib import Path
 
 from ..pipeline.download import (
@@ -155,13 +155,14 @@ def clean_data(audit_table: pd.DataFrame,
 
 
 def quality_control(adata: ad.AnnData, 
+                    audit_table: pd.DataFrame,
                     config: Dict, 
-                    layout: ProjectLayout) -> ad.AnnData:
+                    layout: ProjectLayout) -> Tuple(ad.AnnData, pd.DataFrame):
     """
     Performes probe and/or sample quality control upon DNA methylation values 
     presented as a CpG matrix AnnData object. Returns the quality-controlled 
     CpG matrix AnnData object with updated metadata suitable for downstream 
-    preprocessing and analysis.
+    preprocessing and analysis, and the updated audit table with QC status.
 
     Note that quality control is intended to be performed upon raw project data (as loaded by `load_raw_project()`) and followed by preprocessing (as per `preprocess()`).
 
@@ -189,6 +190,8 @@ def quality_control(adata: ad.AnnData,
     adata : ad.AnnData
         AnnData object representing a project's raw DNA methylation data at the 
         CpG matrix level.
+    audit_table : pd.DataFrame
+        Running audit table maintaining the status of all files.
     config : dict
         Configuration dictionary controlling workflow steps.
     layout : ProjectLayout
@@ -196,9 +199,10 @@ def quality_control(adata: ad.AnnData,
 
     Returns
     -------
-    ad.AnnData
+    Tuple(ad.AnnData, pd.DataFrame)
         AnnData object representing a project's quality-controlled DNA 
-        methylation data at the CpG matrix level with updated metadata.
+        methylation data at the CpG matrix level with updated metadata. Audit 
+        table with updated QC flags.
 
     """
 
@@ -212,18 +216,26 @@ def quality_control(adata: ad.AnnData,
     toggles = config.get('toggles', {})
     
     if toggles.get('sample_qc', True):
+
+        before_qc = set(adata.obs['file_id'])
         adata = sample_qc(adata, config)
+        after_qc = set(adata.obs['file_id'])
+
+        fail_qc = before_qc - after_qc
+
+        # Update the audit table for files present in the adata (not prev. fail)
+        audit_table.loc[audit_table['file_id'].isin(fail_qc), 'qc_pass'] = 0
+        audit_table.loc[audit_table['file_id'].isin(after_qc), 'qc_pass'] = 1
     
     if toggles.get('probe_qc', True):
         adata = probe_qc(adata, annotation, config)
 
     # Clean the metadata and manifest; if no QC performed, same as raw
     clean_metadata(adata, layout)
-    clean_manifest(adata, layout)
 
     adata.uns['state'] = 'processed'
 
-    return adata
+    return (adata, audit_table)
 
 
 def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
@@ -348,8 +360,10 @@ def aggregate_genes(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
 
     # Load the appropriate annotation object
-    annotation = load_annotation(array_type = adata.uns['array_type'], 
-                                 genome_build = adata.uns['genome_build'])
+    annotation = load_annotation(
+        platform = adata.uns['platform'], 
+        reference_genome = adata.uns['reference_genome']
+    )
     
     if config.get('toggles', {}).get('gene_aggregation', True):
         adata = gene_aggregation(adata, annotation, config)
@@ -487,8 +501,8 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     cpg_matrix = pd.concat(sample_beta_values, axis = 1, join = "outer")
     cpg_matrix = cpg_matrix.sort_index()
 
-    # Load the metadata and align the sample IDs
-    metadata = pd.read_csv(layout.raw_metadata)
+    # Sort by file name as .parquets are loaded in that order
+    metadata = pd.read_csv(layout.metadata)
     metadata = metadata.set_index('file_name').sort_index()
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata

@@ -47,12 +47,12 @@ def prepare_dataset(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     layout.initialize()
 
     # Download, clean, and load the project data as an AnnData object
-    download(config, layout)
-    clean_data(layout)
+    audit_table = download(config, layout)
+    audit_table = clean_data(audit_table, layout)
     adata = load_raw_project(config, layout)
 
     # Perform QC and preprocessing based on user configurations
-    adata = quality_control(adata, config, layout)
+    adata, audit_table = quality_control(adata, audit_table, config, layout)
     adata = preprocess(adata, config)
 
     return adata
@@ -60,7 +60,7 @@ def prepare_dataset(config: Dict, layout: ProjectLayout) -> ad.AnnData:
 
 def prepare_cohort(config: Dict, 
                    layout: CohortLayout) -> tuple[ad.AnnData, ad.AnnData, 
-                                              ad.AnnData]:
+                                                  ad.AnnData]:
     """
     Aggregate the full DNA methylation preprocessing workflow outputs
     from multiple project(s) into a single cohort and split the dataset
@@ -84,19 +84,19 @@ def prepare_cohort(config: Dict,
                       for path in layout.project_list]
     
     # Aggregate the projects into a cohort AnnData object
-    cohort_adata = aggregate_cohort(layout, project_adatas)
+    cohort_adata = aggregate_cohort(project_adatas, layout)
 
     # Perform batch effect correction across datasets if toggled
     if config.get('toggles', {}).get('batch_correction', True):
-        cohort_adata = cohort_batch_correction(cohort_adata)
+        cohort_adata = cohort_batch_correction(cohort_adata, config)
 
     # Optionally aggregate to the gene-level if toggled by user configurations
     if config.get('toggles', {}).get('gene_aggregation', True):
-        cohort_adata = aggregate_genes(cohort_adata)
+        cohort_adata = aggregate_genes(cohort_adata, config)
 
     # Winsorize values of 0 or 1 to promote downstream ML stability
     if config.get('toggles', {}).get('winsorization', True):
-        cohort_adata = winsorize(cohort_adata)
+        cohort_adata = winsorize(cohort_adata, config)
 
     # Split the cohort AnnData object into train-val-test splits
     train_adata, val_adata, test_adata = split(cohort_adata, config)

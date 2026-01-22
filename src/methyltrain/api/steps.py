@@ -276,8 +276,8 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     return adata
 
 
-def aggregate_cohort(layout: CohortLayout, 
-                     adatas: List[ad.AnnData]) -> ad.AnnData:
+def aggregate_cohort(adatas: List[ad.AnnData],
+                     layout: CohortLayout) -> ad.AnnData:
     """
     Aggregates multiple project AnnData objects at the CpG probe x sample 
     matrix level into a single cohort AnnData object. Takes the common set of 
@@ -331,10 +331,7 @@ def cohort_batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     matrix cohort.
     """
 
-    # Optionally perform batch correction on the cohort if toggled
-    if config.get('toggles', {}).get('batch_correction', True):
-        adata = batch_correction(adata)
-
+    adata = batch_correction(adata)
     adata.uns['state'] = 'processed'
 
     return adata
@@ -365,9 +362,7 @@ def aggregate_genes(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         reference_genome = adata.uns['reference_genome']
     )
     
-    if config.get('toggles', {}).get('gene_aggregation', True):
-        adata = gene_aggregation(adata, annotation, config)
-
+    adata = gene_aggregation(adata, annotation, config)
     adata.uns['state'] = 'processed'
 
     return adata
@@ -396,7 +391,7 @@ def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     ad.AnnData
         The AnnData object with its beta values clipped per user configurations.
     """
-    
+
     clip_values = config.get('preprocessing', {}).get('clip_values', [0, 0])
     adata.X = np.clip(np.array(adata.X), clip_values[0], clip_values[1])
 

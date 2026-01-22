@@ -27,8 +27,8 @@ class CohortLayout:
     ----------
     cohort_name : str
         Name of the cohort.
-    project_list : List of str
-        List of project names included in the cohort.
+    project_list : List of str or Path
+        List of paths to project .h5ad AnnData objects.
     cohort_adata : str or Path, optional
         Path for the full cohort AnnData object.
     train_adata : str or Path, optional
@@ -41,7 +41,7 @@ class CohortLayout:
     Attributes
     ----------
     cohort_name : str
-    project_list : List of str
+    project_list : List of Path
     cohort_adata : Path
     train_adata : Path
     val_adata : Path
@@ -51,7 +51,7 @@ class CohortLayout:
     def __init__(self, 
                  cohort_name: str = "",
                  root_dir: Optional[StrPath] = None,
-                 project_list: List = [str],
+                 project_list: List = [StrPath],
                  cohort_adata: Optional[StrPath] = None,
                  train_adata: Optional[StrPath] = None,
                  val_adata: Optional[StrPath] = None,

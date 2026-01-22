@@ -13,14 +13,10 @@ DEFAULT_CONFIG = {
     # Path to the gdc-client executable
     "gdc_client": "/Volumes/FBI_Drive/gdc-client",
 
+    "project_id":   "TCGA-KIRP",      # Project name (as on TCGA)
+
     "seed": 42,
     "split": [0.60, 0.20, 0.20],
-
-    "project": {
-        "project_id": "TCGA-KIRP",      # Project name (as on TCGA)
-        "sample_id":  "submitter_id",   # Project sample identifier field
-        "file_id":    "file_name",      # Project file identifier field
-    },
 
     "download": {
 

@@ -57,7 +57,9 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
             - `download_status`: text description for granular logging
             - `metadata_fetched`: 1 if metadata successfully retrieved, else 0
             - `metadata_status`: text description for granular logging
+            - `parquet_path`: path to the raw .parquet file (originally .txt)
             - `qc_pass`: 1 if the sample passed QC, else 0
+            - `notes`: human-readable notes for verbose documentation
     """
 
     layout.validate()
@@ -91,21 +93,65 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
     return audit_table
 
 
-def clean_data(layout: ProjectLayout) -> None:
+def clean_data(audit_table: pd.DataFrame, 
+               layout: ProjectLayout) -> pd.DataFrame:
+    """
+    Cleans raw TCGA DNA methylation beta value .txt files by converting them 
+    to .parquet, flattening directory structure and removing accessory files 
+    and raw files upon success.
 
-    # set sample ID to config.downloading.sample_id instead of filename
+    Updates the audit table with paths to the generated parquets. Renames .
+    parquet files to each file's ID (UUID).
 
-    # ==================
-    # under construction
-    # ==================
+    Parameters
+    ----------
+    audit_table : pd.DataFrame
+        Running audit table maintaining the status of all files.
+    layout : ProjectLayout
+        Object representing a project dataset directory layout.
 
-    # - if different aliquots map to the same sample/case, kept a representative
-    #   profile by selecting the most recently generated file
+    Returns
+    -------
+    pd.DataFrame
+        Auit table with the `parquet_path` column filled.
+    """
 
-    # use convert_to_parquet in clean.py
+    # Verify the raw data directory exists
+    layout.validate()
 
+    # Query for raw files that were successfully downloaded
+    downloaded = audit_table.loc[audit_table['downloaded'] == 1].copy()
+    for idx, row in downloaded.iterrows():
+        file_id = row['file_id']
+        file_name = row['file_name']
 
-    return
+        if pd.notna(row['parquet_path']): continue
+
+        # Name the .parquet file with its UUID, not its old file name
+        txt_path = layout.raw_dir / file_id / file_name
+        parquet_path = layout.raw_dir / f"{file_id}.parquet"
+
+        if not txt_path.exists():
+            raise FileNotFoundError(f"Missing raw file: {txt_path}")
+        
+        # Read the beta values (TCGA standard: probe_id, value)
+        txt = pd.read_csv(txt_path, sep = '\t', header = 0, dtype={0: str})
+        txt.columns = ['probe_id', 'beta_value']
+        txt['beta_value'] = pd.to_numeric(txt['beta_value'], 
+                                            errors = "coerce")
+        
+        txt.to_parquet(parquet_path, index = False)
+
+        # Remove raw files and directory
+        txt_path.unlink()
+        try: 
+            txt_path.parent.rmdir()
+        except OSError:
+            pass
+
+        audit_table.loc[file_id, "parquet_path"] = str(parquet_path)
+
+    return audit_table
 
 
 def quality_control(adata: ad.AnnData, 

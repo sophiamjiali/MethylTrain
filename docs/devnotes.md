@@ -6,8 +6,9 @@
 - working on downloading and cleaning logic
 - modify QC to update the audit table's QC flags
 
+- update clean_metadata and manifest logic to instead change audit table only
+
 
 - need to implement:
-    - download.py: download_metadata()
-    - clean.py: normalize_metadata() for downloading logic
+    - clean()
     - layout.py: CohortLayout class definition

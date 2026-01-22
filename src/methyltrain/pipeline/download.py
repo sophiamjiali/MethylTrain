@@ -247,7 +247,7 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
     """
 
     # Fetch files that were successfully downloaded
-    file_ids = audit_table.query("downloaded == 1")['id'].tolist()
+    file_ids = audit_table.query("downloaded == 1")['file_id'].tolist()
     if not file_ids: return pd.DataFrame()
 
     # Prepare the GDC API request
@@ -288,7 +288,7 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
     missing_ids = set(file_ids) - fetched_ids
     if missing_ids:
         missing = pd.DataFrame({
-            'id': list(missing_ids),
+            'file_id': list(missing_ids),
             'status': ['failed'] * len(missing_ids)
         })
         metadata = pd.concat([metadata, missing], ignore_index = True)

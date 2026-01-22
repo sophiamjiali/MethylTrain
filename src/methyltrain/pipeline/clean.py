@@ -9,29 +9,7 @@
 import pandas as pd
 import anndata as ad
 
-from typing import Dict
-
 from ..fs.layout import ProjectLayout
-
-
-# for clean_data
-def convert_to_parquet(config: Dict, layout: ProjectLayout) -> None:
-    return
-
-# =====| Clean Raw Data |=======================================================
-
-def normalize_metadata():
-
-    # for downloading logic
-
-
-    # clean it to keep the most recent duplicate of file_id (double check actual field)
-    # if not already done in query, get only one array type
-
-
-    # clean the metadata and manifest for samples successfully downloaded
-    
-    return
 
 # =====| Clean Metadata |=======================================================
 

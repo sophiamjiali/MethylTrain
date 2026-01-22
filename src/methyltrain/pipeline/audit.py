@@ -13,6 +13,9 @@ def initialize_audit_table(manifest: pd.DataFrame,
     """
     Initializes an audit table from the raw manifest and download status log.
 
+    Renames the `id` column from the manifest, as expected by the `gdc-client` 
+    API, to `file_id`, the standard internal column name.
+
     Parameters
     ----------
     manifest : pd.DataFrame
@@ -35,6 +38,8 @@ def initialize_audit_table(manifest: pd.DataFrame,
         how = 'left'
     )
 
+    audit_table = audit_table.rename(columns = {'id': 'file_id'})
+
     # Set standard flags
     audit_table['downloaded'] = (audit_table['status'] == 'success').astype(int)
     audit_table['download_status'] = audit_table['status']
@@ -47,6 +52,10 @@ def initialize_audit_table(manifest: pd.DataFrame,
     audit_table['metadata_fetched'] = pd.NA
     audit_table['metadata_status'] = pd.NA
     audit_table['qc_pass'] = pd.NA
+    audit_table['parquet_path'] = pd.NA
     audit_table['notes'] = ""
+
+    # Initialize table index to the file identifier
+    audit_table = audit_table.set_index("file_id", drop = False)
 
     return audit_table

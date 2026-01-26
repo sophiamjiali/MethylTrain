@@ -71,7 +71,7 @@ DEFAULT_CONFIG = {
     },
 
     "preprocessing": {
-        "clip_values": [0.001, 99.999]
+        "clip_values": [0.001, 0.999]
     },
 
     "gene_aggregation": {

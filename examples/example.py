@@ -2,8 +2,21 @@
 # change this to import directlry from methyltrain (add to methyltrain/__init__.py)
 
 import os
-from methyltrain.api.steps import download, clean, preprocess, aggregate, split
-from methyltrain.fs.layout import DatasetLayout
+from methyltrain.api.steps import (
+    download,
+    clean_data,
+    quality_control,
+    preprocess,
+    aggregate_cohort,
+    cohort_batch_correction,
+    aggregate_genes,
+    winsorize,
+    split,
+    load_raw_project,
+    load_processed_project,
+    save_project
+)
+from methyltrain.fs.layout import ProjectLayout
 from methyltrain.config.loader import load_config
 
 def main():

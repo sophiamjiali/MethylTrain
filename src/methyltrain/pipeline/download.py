@@ -59,11 +59,8 @@ def build_manifest(config: Dict) -> pd.DataFrame:
         A minimal manifest DataFrame with columns:
         - 'id' : GDC file UUID
         - 'filename' : file name
-        - 'md5' : GDC-provided checksum
-
     """
 
-    pc = config.get('project', {})
     dc = config.get('download', {})
 
     # Initialize query filters based on user configurations and defaults
@@ -71,31 +68,29 @@ def build_manifest(config: Dict) -> pd.DataFrame:
         "op": "and",
         "content": [
             {"op": "in", "content": {"field": "cases.project.project_id",
-                                     "value": [pc['project_id']]}},
+                                    "value": [config['project_id']]}},
             {"op": "in", "content": {"field": "files.data_category",
-                                     "value": [dc['data_category']]}},
+                                    "value": [dc['data_category']]}},
             {"op": "in", "content": {"field": "files.experimental_strategy",
-                                     "value": [dc['experimental_strategy']]}},
+                                    "value": [dc['experimental_strategy']]}},
             {"op": "in", "content": {"field": "files.data_type",
-                                     "value": [dc['data_type']]}},
+                                    "value": [dc['data_type']]}},
             {"op": "in", "content": {"field": "files.platform",
-                                     "value": [dc['platform']]}},
-            {"op": "in", "content": {"field": "files.reference_genome",
-                                     "value": [dc['reference_genome']]}},
+                                    "value": [dc['platform']]}},
             {"op": "in", "content": {"field": "cases.samples.sample_type",
-                                     "value": [dc['sample_type']]}},
+                                    "value": [dc['sample_type']]}},
             {"op": "in", "content": {"field": "files.access",
-                                     "value": ["open"]}}
+                                    "value": ["open"]}}
         ]
     }
 
     # Fetch additional temporary parameters to assert manifest correctness
     params = {
         "filters": json.dumps(filters),
-        "fields": ",".join(['file_id', 'file_name', 'md5', 'platform',
-                            'reference_genome', 'data_category', 
-                            'experimental_strategy', 'data_type', 
-                            'cases.samples.sample_type']),
+        "fields": ",".join(['cases.project.project_id', 
+                            'file_id', 'file_name', 'platform',
+                            'data_category', 'experimental_strategy', 
+                            'data_type', 'cases.samples.sample_type']),
         "size": 10000
     } 
 
@@ -103,7 +98,7 @@ def build_manifest(config: Dict) -> pd.DataFrame:
     response = requests.get(GDC_QUERY_URL, params = params)
     response.raise_for_status()
     hits = response.json()['data']['hits']
-    
+
     df = pd.DataFrame(hits)
 
     # Verify the integrity of the manifest and requested data
@@ -112,18 +107,17 @@ def build_manifest(config: Dict) -> pd.DataFrame:
 
     assert df['data_category'].eq(dc['data_category']).all()
     assert df['data_type'].eq(dc['data_type']).all()
-    assert df['reference_genome'].eq(dc['reference_genome']).all()
     assert df['platform'].eq(dc['platform']).all()
     assert df['experimental_strategy'].eq(dc['experimental_strategy']).all()
-    assert df['cases'].apply(lambda c: any(
-        s['sample_type'] == dc['sample_type'] for s in c[0]['samples'])
+    assert df['cases'].apply(lambda cases: any(
+        c['sample_type'] == dc['sample_type'] for c in cases[0]['samples'])
     ).all()
-    assert df['cases'].apply(lambda c: any(
-        s['project_id'] == dc['project_id'] for s in c[0]['project'])
+    assert df["cases"].apply(lambda cases: any(
+        case["project"]["project_id"] == config["project_id"] for case in cases)
     ).all()
 
     # Clean the manifest for unused fields for GDC query
-    manifest = (df[['file_id', 'file_name', 'md5']]
+    manifest = (df[['file_id', 'file_name']]
                 .rename(columns = {'file_id': 'id', 'file_name': 'filename'}))
 
     return manifest

@@ -225,10 +225,8 @@ class ProjectLayout:
         """
 
         for p in self.paths:
-            if p.is_dir():
-                p.mkdir(parents = True, exist_ok = True)
-            elif p.is_file():
-                p.parent.mkdir(parents = True, exist_ok = True)
+            target = p if p.suffix == "" else p.parent
+            target.mkdir(parents=True, exist_ok=True)
 
 
     def validate(self):

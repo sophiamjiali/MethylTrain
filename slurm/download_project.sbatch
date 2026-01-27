@@ -15,6 +15,6 @@ conda activate methyltrain-env
 cd /ddn_exa/campbell/sli/methyltrain
 
 # Run the sweep
-srun python scripts/download_project.py \
+srun python slurm/download_project.py \
     --config /ddn_exa/campbell/sli/methyltrain/config/TCGA-UVM_config.yaml \
     --verbose True

@@ -13,7 +13,7 @@ TCGA-PAAD    | Pancreatic adenocarcinoma                  | 202       | 195     
 TCGA-ESCA    | Oesophageal carcinoma                      | 156       | 202        | 201      | (201 X 19140)
 TCGA-OV      | Ovarian serous cystadenocarcinoma          | 83        | 623        | 10       | (10 X 19040)
 TCGA-UVM     | Uveal melanoma                             | 80        | 80         | 78       | (78 x 19245)
-TCGA-CHOL    | Cholangiocarcinoma                         | 36        | 36         |        | (45 X 19244) | 15 minutes
+TCGA-CHOL    | Cholangiocarcinoma                         | 36        | 36         | 36       | (36 X 309993) | 15 minutes
 
 
 Downloaded Status

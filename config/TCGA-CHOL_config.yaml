@@ -39,8 +39,6 @@
     "gene_aggregation": True    # Aggregates cohort beta values to genes
     "winsorization":    True    # Clip extreme values for ML stability
 
-
-
 "quality_control":
     
     "sample_qc":

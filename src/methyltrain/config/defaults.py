@@ -13,7 +13,8 @@ DEFAULT_CONFIG = {
     # Path to the gdc-client executable
     "gdc_client": "/Volumes/FBI_Drive/gdc-client",
 
-    "project_id":   "TCGA-KIRP",      # Project name (as on TCGA)
+    "project_id":       "TCGA-KIRP",      # Project name (as on TCGA)
+    "reference_genome": "GRCh38",         # Default for TCGA 450K era
 
     "seed": 42,
     "split": [0.60, 0.20, 0.20],
@@ -24,8 +25,7 @@ DEFAULT_CONFIG = {
         "data_category":         "DNA Methylation",
         "experimental_strategy": "Methylation Array",
         "data_type":             "Methylation Beta Value",
-        "platform":              "Illumina Human Methylation 450" ,
-        "reference_genome":      "GRCh38",
+        "platform":              "Illumina Human Methylation 450",
         "sample_type":           "Primary Tumor",
 
         # Fields to request from the query
@@ -57,7 +57,7 @@ DEFAULT_CONFIG = {
     "quality_control": {
         
         "sample_qc": {
-            "missing_threshold": 0.05,
+            "missing_threshold": 0.20,
             "outlier_threshold": 1.5     
         },
 

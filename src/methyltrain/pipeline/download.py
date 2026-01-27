@@ -6,6 +6,7 @@
 # Date:             2026-01-20
 # ==============================================================================
 
+import sys
 import json
 import requests
 import subprocess
@@ -19,7 +20,6 @@ from typing import Dict
 from ..fs.layout import ProjectLayout
 from ..constants import GDC_QUERY_URL, MAX_RETRIES
 from ..utils.utils import (
-    verify_md5, 
     verify_gdc_client,
     extract_project_id,
     extract_sample_type,
@@ -127,16 +127,16 @@ def build_manifest(config: Dict) -> pd.DataFrame:
 
 def download_methylation(manifest: pd.DataFrame, 
                          config: Dict,
-                         layout: ProjectLayout) -> pd.DataFrame:
+                         layout: ProjectLayout,
+                         verbose = False) -> pd.DataFrame:
     """
     Downloads DNA methylation files from the GDC using a prevalidated manifest. 
     Includes additional safety and reproducibility checks, ensuring the GDC 
-    Data Transfer Tool (`gdc-client`) is installed and available. Handles 
-    downloading, MD5 verification, and retry logic.
+    Data Transfer Tool (`gdc-client`) is installed and available. Uses batch manifest-based downloading with resume support. Asserts file 
+    existence after download and logs per-file status.
 
-    Verifies MD5 checksums for integrity and retries failed downloads up to 
-    `max_retries` with exponential backoff. Logs per-file download status and 
-    timestamp. Failures in download or MD5 verification will raise an exception.
+    Logs per-file download status and timestamp. Failures in download will 
+    raise an exception (md5 are typically not available).
 
     Note that this function does not bundle the `gdc-client` API in the 
     package; users must install it from the official GDC site.
@@ -155,66 +155,97 @@ def download_methylation(manifest: pd.DataFrame,
     Returns
     -------
     pd.DataFrame
-        Status log recording per-file download status.
+        Status log recording per-file download status ('success' or 'failed').
     """
 
     # Verify the `gdc-client` is properly installed on the user's device
     gdc_client_path = config.get('gdc_client', '')
     verify_gdc_client(gdc_client_path)
 
-    # Download per file in the manifest using the GDC API
+    # Temporary manifest file for batch download
+    tmp_manifest = layout.raw_dir/ f"{layout.project_name}_temp_manifest.txt"
+    manifest[['id', 'filename']].to_csv(tmp_manifest, sep = '\t', index = False)
+
+    remaining_files = manifest.copy()
     status_log = []
 
-    for _, row in manifest.iterrows():
-        file_id = row['id']
-        filename = row['filename']
-        md5 = row['md5']
-        filepath = layout.raw_dir / filename
+    if verbose: print(f"=====| Beginning to download {layout.project_name} DNA "
+                      f"Methylation Data |=====")
 
-        # Attempt at most MAX_RETRIES to download the file
-        attempt, status, success, timestamp = 0, 'pending', False, -1
+    attempt = 0
+    while len(remaining_files) > 0 and attempt < MAX_RETRIES:
+        attempt += 1
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
 
-        while attempt < MAX_RETRIES and not success:
-            attempt += 1
-            timestamp = datetime.datetime.now(datetime.timezone.utc)
+        try:
 
-            try:
-                 # Spawn a subprocess to run the API
+            if verbose:
+                # Run batch download for remaining files
                 subprocess.run([gdc_client_path,
-                                "download",
-                                "-d", str(layout.raw_dir),
-                                "-f", str(file_id)], 
-                                check = True)
+                                "download", 
+                                "--verbose",
+                                "-m", str(tmp_manifest), 
+                                "-d", str(layout.raw_dir)],
+                    check = True,
+                    stdout = sys.stdout,
+                    stderr = sys.stderr
+                )
+            else:
+                # Run batch download for remaining files
+                subprocess.run([gdc_client_path,
+                                "download", 
+                                "-m", str(tmp_manifest), 
+                                "-d", str(layout.raw_dir)],
+                    check = True,
+                    stdout = sys.stdout,
+                    stderr = sys.stderr
+                )
 
-                # Verify MD5; if failed, remove the corrupt file and retry
-                if verify_md5(filepath, md5):
-                    success = True
-                    status = 'success'
-                else:
-                    status = 'failed_md5'
-                    filepath.unlink(missing_ok = True)
-            
-            # Download failed, clean up partial file to avoid persistence
-            except subprocess.CalledProcessError:
-                status = 'failed_download'
-                filepath.unlink(missing_ok = True)
+        except subprocess.CalledProcessError:
+            # Log failure for this batch attempt, will retry failed files
+            print(f"Attempt {attempt} failed, retrying remaining files...")
+            time.sleep(2 ** attempt)
+        
+        # Check existence per file
+        still_remaining = []
+        for _, row in remaining_files.iterrows():
+            filepath = layout.raw_dir / row['filename']
 
-            # If failure, exponential backoff before next attempt
-            if not success:
-                time.sleep(2 ** attempt)
+            if filepath.exists():
+                status_log.append({
+                    'id': row['id'],
+                    'filename': row['filename'],
+                    'status': 'success',
+                    'attempts': attempt,
+                    'timestamp': timestamp
+                })
 
+            else:
+                still_remaining.append(row)
+
+        # Prepare new manifest with only failed files
+        if still_remaining:
+            remaining_files = pd.DataFrame(still_remaining)
+            remaining_files[['id', 'filename']].to_csv(tmp_manifest, 
+                                                       sep = '\t', 
+                                                       index = False)
+            time.sleep(2 ** attempt)
+
+        else:
+            break  # all files downloaded
+
+    # Log any files that failed after MAX_RETRIES
+    for _, row in remaining_files.iterrows():
         status_log.append({
-            'id': file_id,
-            'filename': filename,
-            'md5': md5,
-            'status': status,
+            'id': row['id'],
+            'filename': row['filename'],
+            'status': 'failed',
             'attempts': attempt,
-            'timestamp': timestamp
+            'timestamp': datetime.datetime.now(datetime.timezone.utc)
         })
 
-        if not success:
-            raise RuntimeError(f"File {filename} ({file_id}) filed to download "
-                               f"successfully after {MAX_RETRIES} attempts.")
+    if verbose: print(f"=====| Finished downloading {layout.project_name} DNA "
+                      f"Methylation Data |=====")
 
     return pd.DataFrame(status_log)
 

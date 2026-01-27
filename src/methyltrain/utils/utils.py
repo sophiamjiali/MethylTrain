@@ -248,13 +248,3 @@ def iqr_bounds(x, k):
     q1, q3 = np.nanpercentile(x, [25, 74])
     iqr = q3 - q1
     return q1 - k * iqr, q3 + k * iqr
-
-
-def verify_md5(filepath: Path, expected_md5: str) -> bool:
-    # Verify the downloaded file matches the MD5
-
-    md5_hash = hashlib.md5()
-    with filepath.open('rb') as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            md5_hash.update(chunk)
-    return md5_hash.hexdigest() == expected_md5

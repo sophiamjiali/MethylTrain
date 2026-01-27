@@ -22,7 +22,7 @@ def sample_qc(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     configurations, including the following options in order:
 
     1. Remove high missingness (above the provided threshold)
-    2. Remove outliers from distribution (above the provided number of SD)
+    2. Remove outliers from distribution (IQR-based)
     
     Parameters
     ----------
@@ -41,32 +41,27 @@ def sample_qc(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
     # Fetch relevant thresholds
     qc_cfg = config.get('quality_control', {}).get('sample_qc', {})
-    missing_threshold = qc_cfg.get('missing_threshold', 0.05)
-    outlier_threshold = qc_cfg.get('outlier_threshold', 3)
+    missing_threshold = qc_cfg.get('missing_threshold', 0.20)
+    outlier_threshold = qc_cfg.get('outlier_threshold', 1.5)
 
     # Filter samples for missingness above the provided threshold
     cpg_matrix = np.asarray(adata.X)
     missing_rate = np.isnan(cpg_matrix).mean(axis = 1)
     fail_missing = missing_rate > missing_threshold
 
-    # Filter samples for global distribution beyond k STD using IQR
+    # Filter samples for global signal intensity using a mean beta filter
     sample_mean = np.nanmean(cpg_matrix, axis = 1)
-    sample_std = np.nanstd(cpg_matrix, axis = 1)
-
     mean_lo, mean_hi = iqr_bounds(sample_mean, outlier_threshold)
-    std_lo, std_hi = iqr_bounds(sample_std, outlier_threshold)
-
     fail_mean = (sample_mean < mean_lo) | (sample_mean > mean_hi)
-    fail_std  = (sample_std  < std_lo)  | (sample_std  > std_hi)
 
     # Generate failure mask using missingness and IQR
-    fail_any = fail_missing | fail_mean | fail_std
-    adata._inplace_subset_obs(~fail_any)
+    fail_any = fail_missing | fail_mean
 
     # Set global metadata
     adata.obs['missing_rate'] = missing_rate
     adata.obs['mean_beta'] = sample_mean
-    adata.obs['std_beta'] = sample_std
+
+    adata._inplace_subset_obs(~fail_any)
 
     adata.uns['preprocessing_steps'].append("sample_qc")
 
@@ -82,11 +77,12 @@ def probe_qc(adata: ad.AnnData,
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:
 
-    1. Remove cross-reactive probes
-    2. Remove SNP-associated probes
-    3. Remove multi-mapped probes
-    4. Remove sex chromosome probes
-    5. Remove high missingness (above the provided threshold)
+    1. Remove structural probes
+    2. Remove cross-reactive probes
+    3. Remove SNP-associated probes
+    4. Remove multi-mapped probes
+    5. Remove sex chromosome probes
+    6. Remove high missingness (above the provided threshold)
     
     Parameters
     ----------
@@ -111,8 +107,9 @@ def probe_qc(adata: ad.AnnData,
     probe_cfg = config.get('quality_control', {}).get('probe_qc', {})
     missing_threshold = probe_cfg.get('missing_threshold', 0.05)
 
-    # Remove non-standard probes
+    # Remove non-standard probes from the CpG matrix and annotation
     keep_standard = adata.var_names.str.startswith('cg')
+    adata._inplace_subset_var(keep_standard)
 
     # Filter by missingness
     missing_rate = np.isnan(np.asarray(adata.X)).mean(axis = 0)
@@ -134,11 +131,12 @@ def probe_qc(adata: ad.AnnData,
         keep_annotation &= ~annotation['is_multi_mapped']
 
     # Combine filters and subset the matrix
-    pass_qc = keep_standard & keep_missing & keep_annotation
-    adata._inplace_subset_var(pass_qc)
+    pass_qc = keep_missing & keep_annotation
 
     # Set global metadata
     adata.var['missing_rate'] = missing_rate
     adata.uns['preprocessing_steps'].append("probe_qc")
+
+    adata._inplace_subset_var(pass_qc)
 
     return adata

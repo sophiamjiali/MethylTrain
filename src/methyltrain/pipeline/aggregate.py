@@ -12,7 +12,7 @@ import numpy as np
 
 from typing import List, Dict
 
-from ..constants import ARRAY_PRIORITY
+from ..constants import PLATFORM_PRIORITY
 
 
 def cohort_aggregation(adatas: List[ad.AnnData]) -> ad.AnnData:

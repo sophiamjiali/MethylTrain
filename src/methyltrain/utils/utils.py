@@ -16,15 +16,15 @@ from pathlib import Path
 from typing import Dict, Any, Tuple
 
 from ..constants import (
-    ARRAY_TYPES, 
-    GENOME_BUILD_TYPES,
+    PLATFORM_TYPES, 
+    REFERENCE_GENOME_TYPES,
     ANNOTATION_hg19_PATHS,
     ANNOTATION_hg38_PATHS
 )
 
 # ======| File I/O Utilities |==================================================
 
-def load_sample(file: Path) -> pd.DataFrame:
+def load_sample(file: Path) -> pd.Series:
     """
     Loads the raw DNA methylation data of a given sample, provided as a 
     `.parquet` with CpG probe ID as the index and `beta_value` as the column 
@@ -37,8 +37,8 @@ def load_sample(file: Path) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
-        Beta values of a sample loaded as a DataFrame.
+    pd.Series
+        Beta values of a sample loaded as a Series.
 
     Raises
     ------
@@ -52,7 +52,11 @@ def load_sample(file: Path) -> pd.DataFrame:
     if file.suffix != ".parquet":
         raise FileNotFoundError(f"File must be a `.parquet`: {file}")
     
-    return pd.read_parquet(file)
+    sample = pd.read_parquet(file)
+    sample = pd.Series(sample['beta_value'].values, 
+                       index = sample['probe_id'], 
+                       name = str(file.name))
+    return sample
 
 
 def load_annotation(platform: str, reference_genome: str) -> pd.DataFrame:
@@ -79,17 +83,24 @@ def load_annotation(platform: str, reference_genome: str) -> pd.DataFrame:
     """
 
     # Verify the array type and genome build provided are valid
-    if platform not in ARRAY_TYPES:
-        raise ValueError(f"Array type {platform} was not recognized from the "
-                         f"supported types: {ARRAY_TYPES}")
+    if platform not in PLATFORM_TYPES:
+        raise ValueError(f"Platform {platform} was not recognized from the "
+                         f"supported types: {PLATFORM_TYPES}")
 
-    if reference_genome not in GENOME_BUILD_TYPES:
-        raise ValueError(f"Genome build {reference_genome} was not recognized "
-                         f"from the supported types: {GENOME_BUILD_TYPES}")
+    if reference_genome not in REFERENCE_GENOME_TYPES:
+        raise ValueError(f"Reference genome {reference_genome} was not "
+                         f"recognized from the supported types: "
+                         f"{REFERENCE_GENOME_TYPES}")
     
     # Load the appropriate genome build annotation path (provided by package)
-    anno_path = (ANNOTATION_hg19_PATHS[platform] if reference_genome == 'hg19' 
-                 else ANNOTATION_hg38_PATHS[platform])
+    if reference_genome == "GRCh37":
+        anno_path = ANNOTATION_hg19_PATHS[platform]
+    elif reference_genome == "GRCh38":
+        anno_path = ANNOTATION_hg38_PATHS[platform]
+    else:
+        raise ValueError(f"Reference genome {reference_genome} was not "
+                         f"recognized from the supported types: "
+                         f"{REFERENCE_GENOME_TYPES}")
 
     return pd.read_parquet(anno_path)
 
@@ -192,17 +203,17 @@ def check_dict(default: Dict[str, Any],
                                      "zero and one")
                 
             elif key == "array_type":
-                if user_val not in ARRAY_TYPES:
+                if user_val not in PLATFORM_TYPES:
                     raise ValueError(
                         f"Key '{full_key}' must be one of the following "
-                        f"supported types: {ARRAY_TYPES}"
+                        f"supported types: {PLATFORM_TYPES}"
                     )
                 
             elif key == "genome_build":
-                if user_val not in GENOME_BUILD_TYPES:
+                if user_val not in REFERENCE_GENOME_TYPES:
                     raise ValueError(
                         f"Key '{full_key}' must be one of the following "
-                        f"supported types: {GENOME_BUILD_TYPES}"
+                        f"supported types: {REFERENCE_GENOME_TYPES}"
                     )
                 
 # ======| API Utilities |=======================================================
@@ -245,6 +256,6 @@ def extract_submitter_id(cases):
 # ======| Computation Utilities |===============================================
 
 def iqr_bounds(x, k):
-    q1, q3 = np.nanpercentile(x, [25, 74])
+    q1, q3 = np.nanpercentile(x, [25, 75])
     iqr = q3 - q1
     return q1 - k * iqr, q3 + k * iqr

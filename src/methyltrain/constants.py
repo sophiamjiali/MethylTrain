@@ -6,7 +6,12 @@
 # Date:             2026-01-08
 # ==============================================================================
 
+from pathlib import Path
+
 # =====| Default Paths |========================================================
+
+# Project root directory
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Query link for the GDC API for fetching DNA methylation beta values
 GDC_QUERY_URL = "https://api.gdc.cancer.gov/files"
@@ -18,37 +23,39 @@ MAX_RETRIES = 5
 
 # =====| Supported types |======================================================
 
-# Supported array types; aligns with TCGA metadata case and spelling
-ARRAY_TYPES = [
+# Supported platform types; aligns with TCGA metadata case and spelling
+PLATFORM_TYPES = [
     "Illumina Human Methylation 27",
     "Illumina Human Methylation 450",
     "Illumina Human Methylation Epic" # later add v2
 ]
 
 # Defines resolution hierarchy
-ARRAY_PRIORITY = [
+PLATFORM_PRIORITY = [
     "Illumina Human Methylation Epic",
     "Illumina Human Methylation 450",
     "Illumina Human Methylation 27"
 ]
 
 # Supported Genome Builds; aligns with TCGA metadata case and spelling
-GENOME_BUILD_TYPES = ["GRCh37", "GRCh38"]   # hg19 or hg38
+REFERENCE_GENOME_TYPES = ["GRCh37", "GRCh38"]   # hg19 or hg38
 
 # =====| Resource Paths |=======================================================
 
+ANNOTATION_DIR = PROJECT_ROOT / "resources"
+
 ANNOTATION_hg19_PATHS = {
-    "Illumina Human Methylation 27": "resources/illumina27k_annotation_hg19.parquet",
+    "Illumina Human Methylation 27": ANNOTATION_DIR / "illumina27k_annotation_hg19.parquet",
 
-    "Illumina Human Methylation 450": "resources/illumina450k_annotation_hg19.parquet",
+    "Illumina Human Methylation 450": ANNOTATION_DIR / "illumina450k_annotation_hg19.parquet",
 
-    "Illumina Human Methylation Epic": "resources/illuminaEPIC_annotation_hg19.parquet"
+    "Illumina Human Methylation Epic": ANNOTATION_DIR / "illuminaEPIC_annotation_hg19.parquet"
 }
 
 ANNOTATION_hg38_PATHS = {
-    "Illumina Human Methylation 27": "resources/illumina27k_annotation_hg38.parquet",
+    "Illumina Human Methylation 27": ANNOTATION_DIR / "illumina27k_annotation_hg38.parquet",
 
-    "Illumina Human Methylation 450": "resources/illumina450k_annotation_hg38.parquet",
+    "Illumina Human Methylation 450": ANNOTATION_DIR / "illumina450k_annotation_hg38.parquet",
 
-    "Illumina Human Methylation Epic": "resources/illuminaEPIC_annotation_hg38.parquet"
+    "Illumina Human Methylation Epic": ANNOTATION_DIR / "illuminaEPIC_annotation_hg38.parquet"
 }

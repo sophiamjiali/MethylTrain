@@ -2,7 +2,7 @@
 "gdc_client": "/Volumes/FBI_Drive/gdc-client"
 
 "project_id":       "TCGA-CHOL"
-"reference_genome": "GRCh38"    # Default for TCGA 450K era
+"reference_genome": "GRCh37"    # Default for TCGA 450K era
 
 "seed": 42
 "split": [0.60, 0.20, 0.20]
@@ -44,8 +44,8 @@
 "quality_control":
     
     "sample_qc":
-        "missing_threshold": 0.05
-        "outlier_threshold": 3      # Number of SD beyond the global distr.
+        "missing_threshold": 0.20
+        "outlier_threshold": 1.5      # Scaling factor for IQR range
 
     "probe_qc":
         "remove_cross_reactive": True

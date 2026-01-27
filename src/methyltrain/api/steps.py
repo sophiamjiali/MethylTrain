@@ -514,7 +514,7 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
         raise FileExistsError(f"Project directory is empty: {raw_dir}")
 
     # Load all beta values in parallel as a list of Pandas DataFrames
-    files = [f for f in raw_dir.iterdir() if f.is_file()]
+    files = [f for f in raw_dir.iterdir() if f.suffix == ".parquet"]
 
     with ThreadPoolExecutor() as ex:
         sample_beta_values = list(ex.map(load_sample, files))
@@ -524,8 +524,8 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     cpg_matrix = cpg_matrix.sort_index()
 
     # Sort by file name as .parquets are loaded in that order
-    metadata = pd.read_csv(layout.metadata)
-    metadata = metadata.set_index('file_name').sort_index()
+    metadata = pd.read_csv(layout.metadata, sep = '\t')
+    metadata = metadata.set_index('file_name', drop = True).sort_index()
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     adata = ad.AnnData(
@@ -536,8 +536,8 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
 
     # Initialize global metadata for the project
     adata.uns['project_id'] = layout.project_name
-    adata.uns['array_type'] = config.get('array_type', '')
-    adata.uns['genome_build'] = config.get('genome_build', '')
+    adata.uns['platform'] = config.get('download', {}).get('platform', '')
+    adata.uns['reference_genome'] = config.get('reference_genome', '')
     adata.uns['level'] = "project"
     adata.uns['data_type'] = "cpg_matrix"
     adata.uns['state'] = "raw"

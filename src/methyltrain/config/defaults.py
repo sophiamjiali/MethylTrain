@@ -58,7 +58,7 @@ DEFAULT_CONFIG = {
         
         "sample_qc": {
             "missing_threshold": 0.05,
-            "outlier_threshold": 3      # Number of SD beyond the global distr.
+            "outlier_threshold": 1.5     
         },
 
         "probe_qc": {

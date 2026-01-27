@@ -44,6 +44,6 @@ def clean_metadata(adata: ad.AnnData, layout: ProjectLayout) -> None:
                          "extension `.csv`.")
     
     # Filter out samples that didn't survive quality control
-    metadata = pd.read_csv(layout.metadata)
+    metadata = pd.read_csv(layout.metadata, sep = '\t')
     metadata = metadata[metadata['file_id'].isin(adata.obs['file_id'])]
-    metadata.to_csv(layout.metadata)
+    metadata.to_csv(layout.metadata, sep = '\t', header=True, index=False)

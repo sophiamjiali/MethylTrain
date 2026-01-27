@@ -46,7 +46,8 @@ def initialize_audit_table(manifest: pd.DataFrame,
     audit_table['download_attempts'] = audit_table['attempts'].astype(int)
     audit_table['download_timestamp'] = audit_table['timestamp']
 
-    audit_table.drop(columns = ['status', 'attempts', 'timestamp'])
+    audit_table = audit_table.drop(columns = ['status', 'attempts', 
+                                              'timestamp'])
 
     # Initialize future-stage columns
     audit_table['metadata_fetched'] = pd.NA
@@ -56,6 +57,6 @@ def initialize_audit_table(manifest: pd.DataFrame,
     audit_table['notes'] = ""
 
     # Initialize table index to the file identifier
-    audit_table = audit_table.set_index("file_id", drop = False)
+    audit_table = audit_table.set_index("file_id", drop = True)
 
     return audit_table

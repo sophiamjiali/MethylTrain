@@ -225,7 +225,7 @@ def download_methylation(manifest: pd.DataFrame,
     # Log any files that failed after MAX_RETRIES
     status_log = []
     for _, row in manifest.iterrows():
-        filepath = layout.raw_dir / row['filename']
+        filepath = layout.raw_dir / row['id'] / row['filename']
 
         status_log.append({
             'id': row['id'],
@@ -263,7 +263,7 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
     """
 
     # Fetch files that were successfully downloaded
-    file_ids = audit_table.query("downloaded == 1")['file_id'].tolist()
+    file_ids = audit_table.loc[audit_table['downloaded'] == 1].index.tolist()
     if not file_ids: return pd.DataFrame()
 
     # Prepare the GDC API request
@@ -289,13 +289,16 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
             'status': ['failed'] * len(file_ids)
         })
     
-    # Extract nested metadata values
     metadata = pd.DataFrame(hits)
+    metadata = metadata.drop(columns = ['id'])
 
+    # Extract nested metadata values
     if 'cases' in metadata.columns:
         metadata['project_id'] = metadata['cases'].apply(extract_project_id)
         metadata['submitter_id'] = metadata['cases'].apply(extract_submitter_id)
         metadata['sample_type'] = metadata['cases'].apply(extract_sample_type)
+
+    metadata = metadata.drop(columns = ['cases'])
 
     # Update fetched status based on GDC response failures
     metadata['status'] = 'success'
@@ -309,4 +312,4 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
         })
         metadata = pd.concat([metadata, missing], ignore_index = True)
 
-    return pd.DataFrame()
+    return metadata

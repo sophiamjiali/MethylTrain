@@ -22,7 +22,7 @@ from methyltrain.config.loader import load_config
 def main():
 
     # User provides top-level paths
-    layout = DatasetLayout(
+    layout = ProjectLayout(
         raw_dir = "/data/raw",
         metadata_dir = "/data/metadata",
         manifest_dir = "/data/manifest",

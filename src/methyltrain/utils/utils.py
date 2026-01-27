@@ -221,7 +221,7 @@ def verify_gdc_client(gdc_client_path) -> None:
 def extract_project_id(cases):
     # Helper to extract nested metadata fields
     try:
-        return (cases[0]['project'][0]['project_id'] if cases 
+        return (cases[0]['project']['project_id'] if cases 
                 and cases[0].get('samples') else pd.NA)
     except Exception:
         return pd.NA

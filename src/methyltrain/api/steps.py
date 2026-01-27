@@ -80,7 +80,6 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
     audit_table['metadata_status'] = audit_table['status']
     audit_table = audit_table.drop(columns = 'status')
 
-
     # Clean the metadata of verbose output to the standard format
     metadata = metadata.loc[metadata['status'] == 'success']
 

@@ -162,45 +162,39 @@ def download_methylation(manifest: pd.DataFrame,
     gdc_client_path = config.get('gdc_client', '')
     verify_gdc_client(gdc_client_path)
 
-    # Temporary manifest file for batch download
-    tmp_manifest = layout.raw_dir/ f"{layout.project_name}_temp_manifest.txt"
-    manifest[['id', 'filename']].to_csv(tmp_manifest, sep = '\t', index = False)
+    # Pre-filter the temporary manifest for already downloaded files
+    missing_files = []
+    for _, row in manifest.iterrows():
+        filepath = layout.raw_dir / row['filename']
+        if not filepath.exists():
+            missing_files.append(row)
 
-    remaining_files = manifest.copy()
-    status_log = []
+    remaining_files = pd.DataFrame(missing_files)
+    tmp_manifest = layout.raw_dir/f"{layout.project_name}_temp_manifest.txt"
 
     if verbose: print(f"=====| Beginning to download {layout.project_name} DNA "
                       f"Methylation Data |=====")
 
     attempt = 0
-    while len(remaining_files) > 0 and attempt < MAX_RETRIES:
+    while not remaining_files.empty and attempt < MAX_RETRIES:
         attempt += 1
-        timestamp = datetime.datetime.now(datetime.timezone.utc)
+
+        # Save a temporary manifest
+        remaining_files[['id', 'filename']].to_csv(tmp_manifest, sep = '\t',
+                                                   index = False)
 
         try:
 
-            if verbose:
-                # Run batch download for remaining files
-                subprocess.run([gdc_client_path,
-                                "download", 
-                                "--verbose",
-                                "-m", str(tmp_manifest), 
-                                "-d", str(layout.raw_dir)],
-                    check = True,
-                    stdout = sys.stdout,
-                    stderr = sys.stderr
-                )
-            else:
-                # Run batch download for remaining files
-                subprocess.run([gdc_client_path,
-                                "download", 
-                                "-m", str(tmp_manifest), 
-                                "-d", str(layout.raw_dir)],
-                    check = True,
-                    stdout = sys.stdout,
-                    stderr = sys.stderr
-                )
+            # Run batch download for remaining files
+            cmd = [gdc_client_path,
+                   "download", 
+                   "-m", str(tmp_manifest), 
+                   "-d", str(layout.raw_dir)]
+            if verbose: cmd.insert(2, "--verbose")
 
+            subprocess.run(cmd, check = True, stdout = sys.stdout, 
+                           stderr = sys.stderr)
+            
         except subprocess.CalledProcessError:
             # Log failure for this batch attempt, will retry failed files
             print(f"Attempt {attempt} failed, retrying remaining files...")
@@ -211,16 +205,7 @@ def download_methylation(manifest: pd.DataFrame,
         for _, row in remaining_files.iterrows():
             filepath = layout.raw_dir / row['filename']
 
-            if filepath.exists():
-                status_log.append({
-                    'id': row['id'],
-                    'filename': row['filename'],
-                    'status': 'success',
-                    'attempts': attempt,
-                    'timestamp': timestamp
-                })
-
-            else:
+            if not filepath.exists():
                 still_remaining.append(row)
 
         # Prepare new manifest with only failed files
@@ -234,12 +219,18 @@ def download_methylation(manifest: pd.DataFrame,
         else:
             break  # all files downloaded
 
+    # Delete the temporary manifest
+    if tmp_manifest.exists(): tmp_manifest.unlink()
+
     # Log any files that failed after MAX_RETRIES
-    for _, row in remaining_files.iterrows():
+    status_log = []
+    for _, row in manifest.iterrows():
+        filepath = layout.raw_dir / row['filename']
+
         status_log.append({
             'id': row['id'],
             'filename': row['filename'],
-            'status': 'failed',
+            'status': 'success' if filepath.exists() else 'failed',
             'attempts': attempt,
             'timestamp': datetime.datetime.now(datetime.timezone.utc)
         })

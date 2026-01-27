@@ -19,7 +19,7 @@ def initialize_audit_table(manifest: pd.DataFrame,
     Parameters
     ----------
     manifest : pd.DataFrame
-        Raw manifest with columns ['id', 'filename', 'md5'].
+        Raw manifest with columns ['id', 'filename'].
     status_log : pd.DataFrame
         Download status log with columns ['id', 'status', 'attempts', 
         'timestamp']

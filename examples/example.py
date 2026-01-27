@@ -1,7 +1,6 @@
 
 # change this to import directlry from methyltrain (add to methyltrain/__init__.py)
 
-import os
 from methyltrain.api.steps import (
     download,
     clean_data,

@@ -6,6 +6,8 @@
 # Date:             2026-01-08
 # ==============================================================================
 
+import shutil
+
 import pandas as pd
 import anndata as ad
 import numpy as np
@@ -93,7 +95,8 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
 
 
 def clean_data(audit_table: pd.DataFrame, 
-               layout: ProjectLayout) -> pd.DataFrame:
+               layout: ProjectLayout,
+               verbose = False) -> pd.DataFrame:
     """
     Cleans raw TCGA DNA methylation beta value .txt files by converting them 
     to .parquet, flattening directory structure and removing accessory files 
@@ -118,11 +121,14 @@ def clean_data(audit_table: pd.DataFrame,
     # Verify the raw data directory exists
     layout.validate()
 
+    if verbose: print(f"=====| Beginning to clean {layout.project_name} raw "
+                      f"DNA Methylation Data |=====")
+
     # Query for raw files that were successfully downloaded
     downloaded = audit_table.loc[audit_table['downloaded'] == 1].copy()
-    for idx, row in downloaded.iterrows():
+    for _, row in downloaded.iterrows():
         file_id = row['file_id']
-        file_name = row['file_name']
+        file_name = row['filename']
 
         if pd.notna(row['parquet_path']): continue
 
@@ -142,13 +148,15 @@ def clean_data(audit_table: pd.DataFrame,
         txt.to_parquet(parquet_path, index = False)
 
         # Remove raw files and directory
-        txt_path.unlink()
-        try: 
-            txt_path.parent.rmdir()
-        except OSError:
-            pass
+        txt_path.unlink(missing_ok = True)
+        if txt_path.parent.exists(): shutil.rmtree(txt_path.parent)
+
+        if verbose: print(f"Converted {txt_path} → {parquet_path}")
 
         audit_table.loc[file_id, "parquet_path"] = str(parquet_path)
+
+    if verbose: print(f"=====| Finished cleaning {layout.project_name} raw "
+                      f"DNA Methylation Data |=====")
 
     return audit_table
 

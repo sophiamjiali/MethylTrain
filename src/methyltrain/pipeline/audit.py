@@ -54,6 +54,7 @@ def initialize_audit_table(manifest: pd.DataFrame,
     audit_table['metadata_status'] = pd.NA
     audit_table['qc_pass'] = pd.NA
     audit_table['parquet_path'] = pd.NA
+    audit_table['parquet_path'] = audit_table['parquet_path'].astype("object")
     audit_table['notes'] = ""
 
     # Initialize table index to the file identifier

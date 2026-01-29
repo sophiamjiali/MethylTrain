@@ -34,13 +34,13 @@ def main():
     # Initialize the default project layout
     layout = ProjectLayout(
         project_name = project,
-        root_dir = "../data",
-        raw_dir = f"../data/raw/{project}",
-        audit_table = f"../data/metadata/{project}/{project}_audit_table.csv",
-        metadata = f"../data/metadata/{project}/{project}_metadata.csv",
-        manifest = f"../data/metadata/{project}/{project}_manifest.csv",
-        status_log = f"../data/metadata/{project}/{project}_status_log.csv",
-        project_adata = f"../data/processed/{project}_adata.h5ad"
+        root_dir = "./data",
+        raw_dir = f"./data/raw/{project}",
+        audit_table = f"./data/metadata/{project}/{project}_audit_table.csv",
+        metadata = f"./data/metadata/{project}/{project}_metadata.csv",
+        manifest = f"./data/metadata/{project}/{project}_manifest.csv",
+        status_log = f"./data/metadata/{project}/{project}_status_log.csv",
+        project_adata = f"./data/processed/{project}_adata.h5ad"
     )
     layout.initialize()
     layout.validate()

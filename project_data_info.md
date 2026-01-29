@@ -12,7 +12,7 @@ TCGA-GBM     | Glioblastoma multiforme                    | 212       |         
 TCGA-PAAD    | Pancreatic adenocarcinoma                  | 202       |         |       | 
 TCGA-ESCA    | Oesophageal carcinoma                      | 156       |         |       | 
 TCGA-OV      | Ovarian serous cystadenocarcinoma          | 83        |         |        | 
-TCGA-UVM     | Uveal melanoma                             | 80        |          |        |  |
+TCGA-UVM     | Uveal melanoma                             | 80        | 80         |        |  |
 TCGA-CHOL    | Cholangiocarcinoma                         | 36        | 36         | 36       | (36 X 309993) | 15 minutes
 
 

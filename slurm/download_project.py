@@ -46,8 +46,11 @@ def main():
     layout.initialize()
     layout.validate()
 
-    adata = prepare_dataset(config, layout, args.verbose)
+    adata, audit_table = prepare_dataset(config, layout, args.verbose)
     save_project(adata, layout)
+
+    # Save the updated audit table
+    audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=False)
 
     # Optional clean-up: remove raw data, manifest and audit table persists
     if args.clean_raw_data: 

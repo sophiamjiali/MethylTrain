@@ -6,8 +6,10 @@
 # Date:             2026-01-07
 # ==============================================================================
 
-from typing import Dict
+from typing import Dict, Tuple
+
 import anndata as ad
+import pandas as pd
 
 from ..fs.layout import ProjectLayout, CohortLayout
 from .steps import (
@@ -28,7 +30,7 @@ from .steps import (
 
 def prepare_dataset(config: Dict, 
                     layout: ProjectLayout,
-                    verbose = False) -> ad.AnnData:
+                    verbose = False) -> Tuple[ad.AnnData, pd.DataFrame]:
     """
     Run the full DNA methylation preprocessing workflow on a given project.
 
@@ -70,11 +72,11 @@ def prepare_dataset(config: Dict,
     adata = preprocess(adata, config)
     if verbose: print("Successfully preprocessed the data")
 
-    return adata
+    return (adata, audit_table)
     
 
 def prepare_cohort(config: Dict, 
-                   layout: CohortLayout) -> tuple[ad.AnnData, ad.AnnData, 
+                   layout: CohortLayout) -> Tuple[ad.AnnData, ad.AnnData, 
                                                   ad.AnnData]:
     """
     Aggregate the full DNA methylation preprocessing workflow outputs

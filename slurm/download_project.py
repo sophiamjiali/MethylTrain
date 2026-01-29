@@ -20,6 +20,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type = str, required = True)
     parser.add_argument("--verbose", type = bool, default = True)
+    parser.add_argument("--clean-raw-data", type = bool, default = False)
     args = parser.parse_args()
 
     # Load the user-provided configurations
@@ -49,6 +50,11 @@ def main():
 
     adata = prepare_dataset(config, layout, args.verbose)
     save_project(adata, layout)
+
+    # Optional clean-up: remove raw data, manifest and audit table persists
+    if args.clean_raw_data: 
+        for parquet_file in layout.raw_dir.glob("*.parquet"):
+            parquet_file.unlink()
 
     if args.verbose: 
         print(f"=====| Finished processing project {project} |=====")

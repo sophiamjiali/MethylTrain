@@ -17,4 +17,5 @@ cd /ddn_exa/campbell/sli/methyltrain
 # Run the sweep
 srun python slurm/download_project.py \
     --config /ddn_exa/campbell/sli/methyltrain/config/TCGA-UVM_config.yaml \
-    --verbose True
+    --verbose True \
+    --clean-raw-data True

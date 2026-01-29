@@ -124,7 +124,7 @@ def clean_data(audit_table: pd.DataFrame,
     # Query for raw files that were successfully downloaded
     downloaded = audit_table.loc[audit_table['downloaded'] == 1].copy()
     for idx, row in downloaded.iterrows():
-        file_id = row['file_id']
+        file_id = str(idx)
         file_name = row['filename']
 
         if pd.notna(row['parquet_path']): continue
@@ -148,7 +148,7 @@ def clean_data(audit_table: pd.DataFrame,
         txt_path.unlink(missing_ok = True)
         if txt_path.parent.exists(): shutil.rmtree(txt_path.parent)
 
-        audit_table.loc[str(file_id), "parquet_path"] = str(parquet_path)
+        audit_table.loc[file_id, "parquet_path"] = str(parquet_path)
 
     return audit_table
 

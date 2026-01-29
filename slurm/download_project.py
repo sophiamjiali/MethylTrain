@@ -19,8 +19,10 @@ def main():
     # Parse the arguments provided to the entry-point script
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type = str, required = True)
-    parser.add_argument("--verbose", type = bool, default = True)
-    parser.add_argument("--clean-raw-data", type = bool, default = False)
+    parser.add_argument("--verbose", action = "store_true", 
+                        help = "Enable verbose logging")
+    parser.add_argument("--clean-raw-data", action = "store_true", 
+                        help = "Delete raw data")
     args = parser.parse_args()
 
     # Load the user-provided configurations

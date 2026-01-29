@@ -11,10 +11,10 @@
 DEFAULT_CONFIG = {
 
     # Path to the gdc-client executable
-    "gdc_client": "/Volumes/FBI_Drive/gdc-client",
+    "gdc_client": "/ddn_exa/campbell/sli/methyltrain/gdc-client",
 
     "project_id":       "TCGA-KIRP",      # Project name (as on TCGA)
-    "reference_genome": "GRCh38",         # Default for TCGA 450K era
+    "reference_genome": "GRCh37",         # Default for TCGA 450K era
 
     "seed": 42,
     "split": [0.60, 0.20, 0.20],

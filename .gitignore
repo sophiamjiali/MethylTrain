@@ -1,5 +1,6 @@
-# data folder
+# User-added miscellaneous
 data/
+gdc-client
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

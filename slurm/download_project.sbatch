@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=download_project
 #SBATCH --output=/ddn_exa/campbell/sli/methyltrain/logs/download_project_%j.out
-#SBATCH --error=/ddn_exa/campbell/sli/methyltrain-project/logs/download_project_%j.err
+#SBATCH --error=/ddn_exa/campbell/sli/methyltrain/logs/download_project_%j.err
 #SBATCH --time=24:30:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1

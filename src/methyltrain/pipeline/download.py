@@ -191,7 +191,10 @@ def download_methylation(manifest: pd.DataFrame,
                    "-m", str(tmp_manifest), 
                    "-d", str(layout.raw_dir)]
 
-            subprocess.run(cmd, check = True, stdout = sys.stdout, 
+            # Silence standard output, but keep errors for debugging
+            subprocess.run(cmd, 
+                           check = True, 
+                           stdout = subprocess.DEVNULL, 
                            stderr = sys.stderr)
             
         except subprocess.CalledProcessError:

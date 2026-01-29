@@ -225,8 +225,8 @@ def quality_control(adata: ad.AnnData,
         fail_qc = before_qc - after_qc
 
         # Update the audit table for files present in the adata (not prev. fail)
-        audit_table.loc[audit_table['file_id'].isin(fail_qc), 'qc_pass'] = 0
-        audit_table.loc[audit_table['file_id'].isin(after_qc), 'qc_pass'] = 1
+        audit_table.loc[audit_table.index.isin(fail_qc), 'qc_pass'] = 0
+        audit_table.loc[audit_table.index.isin(after_qc), 'qc_pass'] = 1
     
     if toggles.get('probe_qc', True):
         adata = probe_qc(adata, annotation, config)

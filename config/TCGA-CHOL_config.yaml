@@ -1,5 +1,5 @@
 # Path to the gdc-client executable
-"gdc_client": /ddn_exa/campbell/sli/methyltrain/gdc-client"
+"gdc_client": "/ddn_exa/campbell/sli/methyltrain/gdc-client"
 
 "project_id":       "TCGA-CHOL"
 "reference_genome": "GRCh37"    # Default for TCGA 450K era

@@ -122,10 +122,8 @@ def clean_data(audit_table: pd.DataFrame,
     layout.validate()
 
     # Query for raw files that were successfully downloaded
-    mask = audit_table['downloaded'] == 1
-    for i in audit_table[mask].index:
-        row = audit_table.loc[i]
-
+    downloaded = audit_table.loc[audit_table['downloaded'] == 1].copy()
+    for idx, row in downloaded.iterrows():
         file_id = row['file_id']
         file_name = row['filename']
 
@@ -141,7 +139,8 @@ def clean_data(audit_table: pd.DataFrame,
         # Read the beta values (TCGA standard: probe_id, value)
         txt = pd.read_csv(txt_path, sep = '\t', header = 0, dtype={0: str})
         txt.columns = ['probe_id', 'beta_value']
-        txt['beta_value'] = pd.to_numeric(txt['beta_value'], errors = "coerce")
+        txt['beta_value'] = pd.to_numeric(txt['beta_value'], 
+                                            errors = "coerce")
         
         txt.to_parquet(parquet_path, index = False)
 
@@ -149,7 +148,7 @@ def clean_data(audit_table: pd.DataFrame,
         txt_path.unlink(missing_ok = True)
         if txt_path.parent.exists(): shutil.rmtree(txt_path.parent)
 
-        audit_table.loc[i, "parquet_path"] = str(parquet_path)
+        audit_table.loc[str(file_id), "parquet_path"] = str(parquet_path)
 
     return audit_table
 

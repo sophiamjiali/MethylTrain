@@ -25,5 +25,5 @@ Downloaded Status
 [] TCGA-PAAD
 [] TCGA-ESCA
 [] TCGA-OV 
-[X] TCGA-UVM
+[] TCGA-UVM
 [] TCGA-CHOL

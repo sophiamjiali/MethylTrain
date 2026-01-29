@@ -34,8 +34,7 @@ from ..fs.layout import ProjectLayout, CohortLayout
 # =====| Workflow |=============================================================
 
 def download(config: Dict, 
-             layout: ProjectLayout, 
-             verbose = False) -> pd.DataFrame:
+             layout: ProjectLayout) -> pd.DataFrame:
     """
     Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. An audit table is built to standardize all attempted files, download status, and metadata status.
 
@@ -69,13 +68,8 @@ def download(config: Dict,
     layout.validate()
 
     # Build a manifest of available files and attempt to download them
-    if verbose: print("Attempting to build the manifest")
     manifest = build_manifest(config)
-    if verbose: print("Successfully built the manifest")
-
-    if verbose: print("Attempting to download the methylation data")
-    status_log = download_methylation(manifest, config, layout, verbose)
-    if verbose: print("Successfully downloaded the methylation data")
+    status_log = download_methylation(manifest, config, layout)
 
     # Build an audit table to hold file status flags to query for metadata
     audit_table = initialize_audit_table(manifest, status_log)
@@ -102,8 +96,7 @@ def download(config: Dict,
 
 
 def clean_data(audit_table: pd.DataFrame, 
-               layout: ProjectLayout,
-               verbose = False) -> pd.DataFrame:
+               layout: ProjectLayout) -> pd.DataFrame:
     """
     Cleans raw TCGA DNA methylation beta value .txt files by converting them 
     to .parquet, flattening directory structure and removing accessory files 
@@ -127,9 +120,6 @@ def clean_data(audit_table: pd.DataFrame,
 
     # Verify the raw data directory exists
     layout.validate()
-
-    if verbose: print(f"=====| Beginning to clean {layout.project_name} raw "
-                      f"DNA Methylation Data |=====")
 
     # Query for raw files that were successfully downloaded
     downloaded = audit_table.loc[audit_table['downloaded'] == 1].copy()
@@ -158,12 +148,7 @@ def clean_data(audit_table: pd.DataFrame,
         txt_path.unlink(missing_ok = True)
         if txt_path.parent.exists(): shutil.rmtree(txt_path.parent)
 
-        if verbose: print(f"Converted {txt_path} → {parquet_path}")
-
         audit_table.loc[file_id, "parquet_path"] = str(parquet_path)
-
-    if verbose: print(f"=====| Finished cleaning {layout.project_name} raw "
-                      f"DNA Methylation Data |=====")
 
     return audit_table
 

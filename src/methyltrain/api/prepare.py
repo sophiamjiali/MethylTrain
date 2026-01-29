@@ -50,11 +50,11 @@ def prepare_dataset(config: Dict,
 
     # Download, clean, and load the project data as an AnnData object
     if verbose: print("Attempting to download data")
-    audit_table = download(config, layout, verbose)
+    audit_table = download(config, layout)
     if verbose: print("Successfully downloaded data")
 
     if verbose: print("Attempting to clean the data")
-    audit_table = clean_data(audit_table, layout, verbose)
+    audit_table = clean_data(audit_table, layout)
     if verbose: print("Successfully cleaned the data")
 
     if verbose: print("Attempting to load the raw project data")

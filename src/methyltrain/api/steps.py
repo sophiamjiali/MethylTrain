@@ -83,6 +83,8 @@ def download(config: Dict,
     audit_table['metadata_status'] = audit_table['status']
     audit_table = audit_table.drop(columns = 'status')
 
+    audit_table = audit_table.set_index('file_id', drop = True)
+
     # Clean the metadata of verbose output to the standard format
     metadata = metadata.loc[metadata['status'] == 'success']
 
@@ -90,7 +92,7 @@ def download(config: Dict,
     manifest.to_csv(layout.manifest, sep = '\t', header=True, index=False)
     status_log.to_csv(layout.status_log, sep = '\t', header=True, index=False)
     metadata.to_csv(layout.metadata, sep = '\t', header=True, index=False)
-    audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=False)
+    audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=True)
 
     return audit_table
 

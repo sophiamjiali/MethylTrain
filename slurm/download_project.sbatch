@@ -16,8 +16,6 @@ if [[ -z "${PROJECT_ID}" ]]; then
     exit 1
 fi
 
-echo "Preparing project ${PROJECT_ID}"
-
 # Activate Conda Environment
 source ~/miniforge3/etc/profile.d/conda.sh
 conda activate methyltrain-env

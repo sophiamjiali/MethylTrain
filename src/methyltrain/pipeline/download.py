@@ -190,7 +190,6 @@ def download_methylation(manifest: pd.DataFrame,
                    "download", 
                    "-m", str(tmp_manifest), 
                    "-d", str(layout.raw_dir)]
-            if verbose: cmd.insert(2, "--verbose")
 
             subprocess.run(cmd, check = True, stdout = sys.stdout, 
                            stderr = sys.stderr)

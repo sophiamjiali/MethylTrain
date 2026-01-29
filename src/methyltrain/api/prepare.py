@@ -26,7 +26,9 @@ from .steps import (
 
 # =====| Exposed Functions |====================================================
 
-def prepare_dataset(config: Dict, layout: ProjectLayout) -> ad.AnnData:
+def prepare_dataset(config: Dict, 
+                    layout: ProjectLayout,
+                    verbose = False) -> ad.AnnData:
     """
     Run the full DNA methylation preprocessing workflow on a given project.
 
@@ -42,18 +44,31 @@ def prepare_dataset(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     ad.AnnData
         The processed dataset.
     """
-    
+
     # Ensure directories exist
     layout.initialize()
 
     # Download, clean, and load the project data as an AnnData object
-    audit_table = download(config, layout)
-    audit_table = clean_data(audit_table, layout)
+    if verbose: print("Attempting to download data")
+    audit_table = download(config, layout, verbose)
+    if verbose: print("Successfully downloaded data")
+
+    if verbose: print("Attempting to clean the data")
+    audit_table = clean_data(audit_table, layout, verbose)
+    if verbose: print("Successfully cleaned the data")
+
+    if verbose: print("Attempting to load the raw project data")
     adata = load_raw_project(config, layout)
+    if verbose: print("Successfully loaded the raw project data")
 
     # Perform QC and preprocessing based on user configurations
+    if verbose: print("Attempting to perform quality control")
     adata, audit_table = quality_control(adata, audit_table, config, layout)
+    if verbose: print("Successfully performed quality control")
+
+    if verbose: print("Attempting to preprocess the data")
     adata = preprocess(adata, config)
+    if verbose: print("Successfully preprocessed the data")
 
     return adata
     

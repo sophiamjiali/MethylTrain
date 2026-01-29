@@ -33,7 +33,9 @@ from ..fs.layout import ProjectLayout, CohortLayout
 
 # =====| Workflow |=============================================================
 
-def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
+def download(config: Dict, 
+             layout: ProjectLayout, 
+             verbose = False) -> pd.DataFrame:
     """
     Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. An audit table is built to standardize all attempted files, download status, and metadata status.
 
@@ -67,8 +69,13 @@ def download(config: Dict, layout: ProjectLayout) -> pd.DataFrame:
     layout.validate()
 
     # Build a manifest of available files and attempt to download them
+    if verbose: print("Attempting to build the manifest")
     manifest = build_manifest(config)
-    status_log = download_methylation(manifest, config, layout)
+    if verbose: print("Successfully built the manifest")
+
+    if verbose: print("Attempting to download the methylation data")
+    status_log = download_methylation(manifest, config, layout, verbose)
+    if verbose: print("Successfully downloaded the methylation data")
 
     # Build an audit table to hold file status flags to query for metadata
     audit_table = initialize_audit_table(manifest, status_log)

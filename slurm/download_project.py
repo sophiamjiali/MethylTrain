@@ -29,6 +29,8 @@ def main():
     if args.verbose: 
         print(f"=====| Beginning to process project {project} |=====")
 
+    if args.verbose: print("Attempting to initialize ProjectLayout")
+
     # Initialize the default project layout
     layout = ProjectLayout(
         project_name = project,
@@ -43,7 +45,9 @@ def main():
     layout.initialize()
     layout.validate()
 
-    adata = prepare_dataset(config, layout)
+    if args.verbose: print("Successfully initialized ProjectLayout")
+
+    adata = prepare_dataset(config, layout, args.verbose)
     save_project(adata, layout)
 
     if args.verbose: 

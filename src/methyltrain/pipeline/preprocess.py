@@ -111,10 +111,37 @@ def filter_variance(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
     return adata
 
-def m_transform(adata: ad.AnnData) -> ad.AnnData:
+
+def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-6) -> ad.AnnData:
     """
-    convert to M-values
+    Converts beta values in a CpG matrix AnnData object to M-values using the 
+    logit-transformation: M = log2(beta / (1 - beta)). This transformation 
+    produces unbounded, approximately homoscedastic values suitable for 
+    downstream modeling and batch correction.
+
+    Conversion should be performed after normalization and before batch 
+    correction.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object representing a project's DNA methylation data at the 
+        CpG matrix level.
+
+    Returns
+    -------
+    ad.AnnData
+        AnnData object with M-values in .X and updated preprocessing metadata.
     """
+
+    # Clip beta values to avoid division by zero or log(0)
+    X = np.array(adata.X, copy = True).astype(np.float32)
+    X = np.clip(X, epsilon, 1 - epsilon)
+    adata.X = np.log2(X / (1 - X))
+
+    # Store metadata
+    adata.uns['preprocessing_steps'].append('convert_to_mval')
+    adata.uns['conversion'] = 'm_value'
 
     return ad.AnnData()
 

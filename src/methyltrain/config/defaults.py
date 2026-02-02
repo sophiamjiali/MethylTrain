@@ -45,6 +45,8 @@ DEFAULT_CONFIG = {
 
     "toggles": {
 
+        # M-value conversion and gene-aggregation + winsorization are exclusive
+
         "sample_qc":        True,
         "probe_qc":         True,
         "normalization":    True,    # Perform beta-scale normalization
@@ -53,7 +55,7 @@ DEFAULT_CONFIG = {
         "imputation":       True,    # Perform imputation, else default to 0
         "batch_correction": True,    # Perform batch correction upon cohort
         "gene_aggregation": False,   # Aggregates cohort beta values to genes
-        "winsorization":    True     # Clip extreme values for ML stability
+        "winsorization":    False    # Clip extreme values for ML stability
 
     },
 

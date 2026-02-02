@@ -533,6 +533,7 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     adata.uns['reference_genome'] = config.get('reference_genome', '')
     adata.uns['level'] = "project"
     adata.uns['data_type'] = "cpg_matrix"
+    adata.uns['conversion'] = 'beta_value'
     adata.uns['state'] = "raw"
     adata.uns['preprocessing_steps'] = []
 

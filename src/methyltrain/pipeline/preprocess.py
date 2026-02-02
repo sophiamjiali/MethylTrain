@@ -143,7 +143,7 @@ def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-6) -> ad.AnnData:
     adata.uns['preprocessing_steps'].append('convert_to_mval')
     adata.uns['conversion'] = 'm_value'
 
-    return ad.AnnData()
+    return adata
 
 
 def impute(adata: ad.AnnData):
@@ -200,11 +200,14 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     ----------
     adata : ad.AnnData
         AnnData object with DNA methylation M-values in .X.
+    config : dict
+        Configuration dictionary controlling workflow steps.
     
     Returns
     -------
     adata : ad.AnnData
-        AnnData object representing a project's batch-corrected DNA methylation data at the CpG probe matrix level with updated metadata.
+        AnnData object representing a project's batch-corrected DNA methylation 
+        data at the CpG probe matrix level with updated metadata.
 
     Raises
     ------

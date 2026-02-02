@@ -22,10 +22,16 @@ from ..pipeline.download import (
     build_metadata,
     download_methylation
 )
+from ..pipeline.preprocess import (
+    normalize,
+    filter_variance,
+    convert_to_mval,
+    impute, 
+    batch_correction
+)
 from ..pipeline.audit import initialize_audit_table
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata
-from ..pipeline.preprocess import impute, batch_correction
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
 from ..utils.utils import load_sample, load_annotation
 from ..fs.layout import ProjectLayout, CohortLayout
@@ -246,8 +252,10 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:
     
-    1. 
-    2. Imputation of missing values
+    1. Normalization / Harmonization
+    2. Filter low variance / extreme values
+    3. M-value conversion
+    4. Imputation of missing values
 
     Note that batch effect correction is optionally performed after multiple 
     projects have been aggregated into a cohort.
@@ -268,7 +276,19 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
 
     # Perform each preprocessing step if toggled by the user-configurations
+    if config.get('toggles', {}).get('normalize', True):
+        adata = normalize(adata)
+
     if config.get('toggles', {}).get('sample_qc', True):
+        adata = impute(adata)
+
+    if config.get('toggles', {}).get('filter_variance', True):
+        adata = filter_variance(adata, config)
+
+    if config.get('toggles', {}).get('convert_to_mval', True):
+        adata = convert_to_mval(adata)
+
+    if config.get('toggles', {}).get('impute', True):
         adata = impute(adata)
 
     adata.uns['state'] = 'processed'
@@ -327,11 +347,32 @@ def aggregate_cohort(adatas: List[ad.AnnData],
 
 def cohort_batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
-    Corrects batch effects across multiple projects aggregated into a CpG 
-    matrix cohort.
-    """
+    Performs ComBat batch correction across multiple projects aggregated into a CpG matrix cohort. Automatically checks that the input data is M-values (requirement for parametric batch correction). 
 
-    adata = batch_correction(adata)
+    Parameters
+    ----------
+    adata : ad.AnnData
+        Cohort AnnData object with DNA methylation M-values.
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    adata : ad.AnnData
+        AnnData object representing the cohort's batch-corrected DNA 
+        methylation data at the CpG probe matrix level with updated metadata.
+
+    Raises
+    ------
+    ValueError
+        If NaNs exist in the AnnData object (batch correction requires none), 
+        if data is presented as beta values instead of M-values, or if batch 
+        and covariate columns don't exist.
+    """
+    
+    if config.get('toggles', {}).get('batch_correction', True):
+        adata = batch_correction(adata, config)
+
     adata.uns['state'] = 'processed'
 
     return adata
@@ -392,9 +433,12 @@ def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         The AnnData object with its beta values clipped per user configurations.
     """
 
-    clip_values = config.get('preprocessing', {}).get('clip_values', [0, 0])
-    adata.X = np.clip(np.array(adata.X), clip_values[0], clip_values[1])
+    if config.get('toggles', {}).get('winsorize', True):
+        clip_values = config.get('preprocessing', {}).get('clip_values', [0, 0])
+        adata.X = np.clip(np.array(adata.X), clip_values[0], clip_values[1])
 
+    adata.uns['state'] = 'processed'
+    
     return adata
 
 

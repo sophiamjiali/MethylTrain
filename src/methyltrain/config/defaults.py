@@ -50,13 +50,13 @@ DEFAULT_CONFIG = {
 
         "sample_qc":        True,
         "probe_qc":         True,
-        "normalization":    True,    # Perform beta-scale normalization
+        "normalize":        True,    # Perform beta-scale normalization
         "filter_variance":  True,    # Filters low variance or extreme probes
         "convert_to_mval":  True,    # Convert beta values to M-values
         "imputation":       True,    # Perform imputation, else default to 0
         "batch_correction": True,    # Perform batch correction upon cohort
         "gene_aggregation": False,   # Aggregates cohort beta values to genes
-        "winsorization":    False    # Clip extreme values for ML stability
+        "winsorize":        False    # Clip extreme values for ML stability
 
     },
 
@@ -87,7 +87,7 @@ DEFAULT_CONFIG = {
         "batch_correction": {
             "batch_key": "plate",
             "covariates": ["project_id"]    # Synonymous with CancerType
-        }
+        },
 
         "clip_values": [0.001, 0.999]
     },

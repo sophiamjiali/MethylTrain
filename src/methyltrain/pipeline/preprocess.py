@@ -12,7 +12,7 @@ import numpy as np
 from inmoose.pycombat import pycombat_norm
 from typing import Dict
 
-def normalize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+def normalize(adata: ad.AnnData) -> ad.AnnData:
     """
     Performs minimal beta-scale normalization and harmonization on DNA 
     methylation values in a CpG matrix AnnData object. This aligns the 
@@ -27,8 +27,6 @@ def normalize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     adata : ad.AnnData
         AnnData object representing a project's DNA methylation data at the 
         CpG matrix level.
-    config : dict
-        Configuration dictionary controlling workflow steps.
 
     Returns
     -------
@@ -65,10 +63,53 @@ def normalize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
 def filter_variance(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
-    remove low-variance probes and probes with mean 0 or 1 across samples
+    Filters CpG probes in an AnnData object based on low variance or extreme 
+    mean beta values. Probes with near-constant values across samples are 
+    removed, as they carry minimal biological information.
+
+    This step should be applied after normalization and before M-value 
+    conversion.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object representing a project's DNA methylation data at the 
+        CpG matrix level (beta-values).
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    ad.AnnData
+        AnnData object with low-variance or extreme probes removed and updated 
+        metadata.
     """
 
-    return ad.AnnData()
+    # Fetch user-provided configurations with defaults
+    filter_cfg = config.get('preprocessing', {}).get('filter_variance', {})
+
+    min_variance = filter_cfg.get('min_variance', 0.0001)
+    min_mean = filter_cfg.get('min_mean', 0.01)
+    max_mean = filter_cfg.get('max_mean', 0.99)
+    
+    X = np.array(adata.X, copy = True).astype(np.float32)
+
+    # Compute per-probe variance and mean
+    probe_variance = np.var(X, axis = 0)
+    probe_mean = np.mean(X, axis = 0)
+
+    # Identify probes to keep and filter
+    keep_mask = ((probe_variance >= min_variance) & 
+                 (probe_mean >= min_mean) & 
+                 (probe_mean <= max_mean))
+    
+    adata._inplace_subset_var(keep_mask)
+
+    # Store metadata; mean already stored in probe QC step
+    adata.var['variance'] = probe_variance[keep_mask]
+    adata.uns['preprocessing_steps'].append("filter_variance")
+
+    return adata
 
 def m_transform(adata: ad.AnnData) -> ad.AnnData:
     """

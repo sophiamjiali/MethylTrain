@@ -45,4 +45,4 @@ To-Do:
 
 - add batch variables from metadata
 - steps.py/preprocess(): add everything
-- update configs to match
+- update configs to match default

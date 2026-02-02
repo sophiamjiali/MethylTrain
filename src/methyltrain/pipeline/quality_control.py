@@ -59,7 +59,7 @@ def sample_qc(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
     # Set global metadata
     adata.obs['missing_rate'] = missing_rate
-    adata.obs['mean_beta'] = sample_mean
+    adata.obs['mean'] = sample_mean
 
     adata._inplace_subset_obs(~fail_any)
 

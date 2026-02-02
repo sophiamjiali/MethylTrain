@@ -47,9 +47,12 @@ DEFAULT_CONFIG = {
 
         "sample_qc":        True,
         "probe_qc":         True,
+        "normalization":    True,    # Perform beta-scale normalization
+        "filter_variance":  True,    # Filters low variance or extreme probes
+        "convert_to_mval":  True,    # Convert beta values to M-values
         "imputation":       True,    # Perform imputation, else default to 0
         "batch_correction": True,    # Perform batch correction upon cohort
-        "gene_aggregation": True,    # Aggregates cohort beta values to genes
+        "gene_aggregation": False,   # Aggregates cohort beta values to genes
         "winsorization":    True     # Clip extreme values for ML stability
 
     },
@@ -71,6 +74,13 @@ DEFAULT_CONFIG = {
     },
 
     "preprocessing": {
+
+        "filter_variance": {
+            "min_variance": 0.0001,
+            "min_mean":     0.01,
+            "max_mean":     0.99
+        },
+
         "clip_values": [0.001, 0.999]
     },
 

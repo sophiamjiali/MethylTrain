@@ -76,14 +76,12 @@ def download(config: Dict,
     metadata = build_metadata(audit_table, config)
 
     # Update the audit table with metadata attempts (rare)
-    audit_table = audit_table.merge(metadata[['file_id', 'status']],
-                                    on = 'file_id', how = 'left')
+    audit_table = audit_table.merge(metadata[['status']], how = 'left',
+                                    left_index = True, right_index = True)
     audit_table['metadata_fetched'] = (audit_table['status']
                                        .eq('success').astype(int))
     audit_table['metadata_status'] = audit_table['status']
     audit_table = audit_table.drop(columns = 'status')
-
-    audit_table = audit_table.set_index('file_id', drop = True)
 
     # Clean the metadata of verbose output to the standard format
     metadata = metadata.loc[metadata['status'] == 'success']

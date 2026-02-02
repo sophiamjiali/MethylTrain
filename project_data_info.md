@@ -24,6 +24,8 @@ Downloaded Status
 [] TCGA-GBM
 [] TCGA-PAAD
 [] TCGA-ESCA
-[] TCGA-OV 
-[] TCGA-UVM
-[] TCGA-CHOL
+[X] TCGA-OV 
+[X] TCGA-UVM
+[X] TCGA-CHOL
+
+[] CPTAC-3

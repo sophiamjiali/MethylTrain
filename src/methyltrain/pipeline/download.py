@@ -314,4 +314,7 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
         })
         metadata = pd.concat([metadata, missing], ignore_index = True)
 
+    # Set the file_id as the index to align with the audit table
+    metadata = metadata.set_index('file_id', drop = True)
+
     return metadata

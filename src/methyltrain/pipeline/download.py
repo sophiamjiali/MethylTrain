@@ -23,7 +23,8 @@ from ..utils.utils import (
     verify_gdc_client,
     extract_project_id,
     extract_sample_type,
-    extract_submitter_id
+    extract_submitter_id,
+    extract_plate
 )
 
 # =====| Build Manifest |=======================================================
@@ -299,6 +300,7 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
         metadata['project_id'] = metadata['cases'].apply(extract_project_id)
         metadata['submitter_id'] = metadata['cases'].apply(extract_submitter_id)
         metadata['sample_type'] = metadata['cases'].apply(extract_sample_type)
+        metadata['plate'] = metadata['cases'].apply(extract_plate)
 
     metadata = metadata.drop(columns = ['cases'])
 

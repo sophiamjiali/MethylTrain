@@ -39,7 +39,8 @@ DEFAULT_CONFIG = {
             'data_type',
             'experimental_strategy',     # e.g. add mutational/clinical metadata
             'platform',                  #  | to query for here for facilitating
-            'reference_genome'           #  | further downstream analysis
+            'reference_genome',          #  | further downstream analysis
+            'cases.biospecimen.bcr_plate_id'
         ]
     },
 
@@ -82,6 +83,11 @@ DEFAULT_CONFIG = {
             "min_mean":     0.01,
             "max_mean":     0.99
         },
+
+        "batch_correction": {
+            "batch_key": "plate",
+            "covariates": ["project_id"]    # Synonymous with CancerType
+        }
 
         "clip_values": [0.001, 0.999]
     },

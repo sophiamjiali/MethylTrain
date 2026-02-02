@@ -38,9 +38,8 @@ To-Do:
 
 
 
-- filter_variance()
-- m_transform()
-- batch_correction (ComBat-seq, M-values)
+
+- batch_correction (ComBat-seq, M-values) -> AFTER AGGREGATION
     - checks if M-value toggled, use one approach per
 
 - add batch variables from metadata

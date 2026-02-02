@@ -251,6 +251,14 @@ def extract_submitter_id(cases):
         return cases[0]['submitter_id'] if cases else pd.NA
     except Exception:
         return pd.NA
+    
+def extract_plate(cases):
+    # Helper to extract nested metadata fields
+    try:
+        return (cases[0]['samples'][0]['biospecimen'] if cases 
+                and cases[0].get('bcr_plate_id') else pd.NA)
+    except Exception:
+        return pd.NA
         
 
 # ======| Computation Utilities |===============================================

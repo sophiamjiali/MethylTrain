@@ -189,23 +189,17 @@ def impute(adata: ad.AnnData):
     return adata
 
 
-
-
 def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
-    Performs batch correction on an AnnData object using the InMoose ComBat 
-    function (pycombat_norm).
+    Performs ComBat batch correction on an AnnData object using InMoose's 
+    pycombat_norm function. Automatically checks that the input data are M-values (requirement for parametric batch correction).
 
-    Correction is applied using the `project_id` column in .obs. The corrected matrix is stored in in-place for simplicity (overwrites .X).
+    Batch correction should be applied after cohort aggregation.
 
     Parameters
     ----------
     adata : ad.AnnData
-        AnnData object representing a project or cohort's optionally quality 
-        controlled and/pr preprocessed DNA methylation data at the CpG matrix 
-        level. The object must include:
-        - .obs['project_id] : project of origin for each sample
-        - .X : probe-level beta values (dense, not sparse)
+        AnnData object with DNA methylation M-values in .X.
     
     Returns
     -------
@@ -215,7 +209,9 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     Raises
     ------
     ValueError
-        If NaNs exist in the AnnData object (batch correction requires none).
+        If NaNs exist in the AnnData object (batch correction requires none), 
+        if data is presented as beta values instead of M-values, or if batch 
+        and covariate columns don't exist.
     """
 
     X = np.array(adata.X)
@@ -225,10 +221,27 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         raise ValueError("Batch correction requires no Nans. Please impute "
                          "or remove missing values first.")
     
-    # Apply ComBat from the inmoose package
-    batch = adata.obs['project_id'].values
-    X = pycombat_norm(X, batch)
-    adata.X = X
+    # Ensure data type is M-values, not beta values
+    if adata.uns['data_type'] != "m_value":
+        raise ValueError("Batch correction should be performed on M-values. "
+                         "Please convert from beta values to M-values first.")
+    
+    # Ensure batch and covariate columns exist
+    batch_cfg = config.get('preprocessing', {}).get('batch_correction', {})
+    batch_key = batch_cfg.get('batch_key', 'plate')
+    covariates = batch_cfg.get('covariates', ['project_id'])
+
+    for col in [batch_key] + covariates:
+        if col not in adata.obs.columns: 
+            raise ValueError(f"Column {col} not found in adata.obs. Required "
+                             "for batch correction.")
+        
+    # Prepare the batch vector and covariate matrix
+    batch = adata.obs[batch_key].astype(str).values
+    mod = adata.obs[covariates]
+
+    # Apply ComBat via the InMoose package
+    adata.X = pycombat_norm(counts = X.T, batch = batch, covar_mod = mod).T
 
     adata.uns['preprocessing_steps'].append("batch_correction")
 

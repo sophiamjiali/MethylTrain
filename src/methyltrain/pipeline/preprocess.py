@@ -12,10 +12,76 @@ import numpy as np
 from inmoose.pycombat import pycombat_norm
 from typing import Dict
 
+def normalize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+    """
+    Performs minimal beta-scale normalization and harmonization on DNA 
+    methylation values in a CpG matrix AnnData object. This aligns the 
+    distributions of beta-values across samples without altering biological 
+    signal.
+
+    Normalization should be performed after sample- and probe-level quality 
+    control and before filtering low-variance probes.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object representing a project's DNA methylation data at the 
+        CpG matrix level.
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    ad.AnnData
+        AnnData object representing a project's normalized DNA methylation data 
+        at the CpG matrix level with updated metadata.
+    """
+
+    X = np.array(adata.X, copy = True).astype(np.float32)
+
+    # Compute per-sample median and IQR
+    sample_median = np.median(X, axis = 1)
+    sample_iqr = np.subtract(*np.percentile(X, [75, 25], axis = 1))
+    sample_iqr[sample_iqr == 0] = 1.0
+
+    # Compute global median and IQR across samples
+    global_median = np.median(X)
+    global_iqr = np.subtract(*np.percentile(X, [75, 25]))
+    if global_iqr == 0: global_iqr = 1.0
+
+    # Scale each sample to match the global median and IQR
+    X = ((X.T - sample_median) / sample_iqr * global_iqr + global_median).T
+
+    # Clip to [0, 1] to retain valid beta-value bounds
+    X = np.clip(X, 0, 1)
+
+    adata.X = X
+
+    # Store metadata
+    adata.uns['preprocessing_steps'].append('normalize')
+
+    return adata
+
+
+def filter_variance(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+    """
+    remove low-variance probes and probes with mean 0 or 1 across samples
+    """
+
+    return ad.AnnData()
+
+def m_transform(adata: ad.AnnData) -> ad.AnnData:
+    """
+    convert to M-values
+    """
+
+    return ad.AnnData()
+
+
 def impute(adata: ad.AnnData):
     """
     Imputes missing beta values in a CpG matrix AnnData object per probe using 
-    the mean value across all samples. Returns the imputed object with udpated 
+    the mean value across all samples. Returns the imputed object with updated 
     metadata suitable for further preprocessing.
 
     Imputation is intended to be performed after sample- and probe-level 
@@ -56,7 +122,8 @@ def impute(adata: ad.AnnData):
 
 
 
-def batch_correction(adata: ad.AnnData) -> ad.AnnData:
+
+def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
     Performs batch correction on an AnnData object using the InMoose ComBat 
     function (pycombat_norm).
@@ -98,13 +165,3 @@ def batch_correction(adata: ad.AnnData) -> ad.AnnData:
     adata.uns['preprocessing_steps'].append("batch_correction")
 
     return adata
-
-
-
-def winsorize_data(adata: ad.AnnData, config: Dict) -> ad.AnnData:
-    """
-    Winsorizes gene-level beta values 
-    
-    """
-
-    return ad.AnnData()

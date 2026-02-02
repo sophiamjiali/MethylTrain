@@ -246,7 +246,8 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:
     
-    1. Imputation of missing values
+    1. 
+    2. Imputation of missing values
 
     Note that batch effect correction is optionally performed after multiple 
     projects have been aggregated into a cohort.

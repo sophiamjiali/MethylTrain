@@ -29,3 +29,20 @@ Downloaded Status
 [X] TCGA-CHOL
 
 [] CPTAC-3
+
+
+
+To-Do:
+- adding normalization, batch correction, variance filtering to workflow
+- M-value transformation as well
+
+
+
+- filter_variance()
+- m_transform()
+- batch_correction (ComBat-seq, M-values)
+    - checks if M-value toggled, use one approach per
+
+- add batch variables from metadata
+- steps.py/preprocess(): add everything
+- update configs to match

@@ -2,7 +2,11 @@
 data/
 gdc-client
 .vscode
+<<<<<<< Updated upstream
 logs/
+=======
+examples/
+>>>>>>> Stashed changes
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

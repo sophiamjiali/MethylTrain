@@ -43,7 +43,11 @@ def normalize(adata: ad.AnnData) -> ad.AnnData:
         np.nanpercentile(X, 75, axis = 1) -
         np.nanpercentile(X, 25, axis = 1)
     )
-    sample_iqr[sample_iqr == 0] = 1.0
+    
+    # Guard against invalid scaling
+    invalid = np.isnan(sample_median) | np.isnan(sample_iqr) | (sample_iqr == 0)
+    sample_iqr[invalid] = 1.0
+    sample_median[invalid] = 0.0
 
     # Compute global median and IQR across samples
     global_median = np.nanmedian(X)
@@ -51,7 +55,7 @@ def normalize(adata: ad.AnnData) -> ad.AnnData:
         np.nanpercentile(X, 75) -
         np.nanpercentile(X, 25)
     )
-    if global_iqr == 0: global_iqr = 1.0
+    if np.isnan(global_iqr) or global_iqr == 0: global_iqr = 1.0
 
     # Scale each sample to match the global median and IQR
     X = ((X.T - sample_median) / sample_iqr * global_iqr + global_median).T

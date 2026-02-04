@@ -1,6 +1,7 @@
 # User-added miscellaneous
 data/
 gdc-client
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

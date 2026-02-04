@@ -38,13 +38,19 @@ def normalize(adata: ad.AnnData) -> ad.AnnData:
     X = np.array(adata.X, copy = True).astype(np.float32)
 
     # Compute per-sample median and IQR
-    sample_median = np.median(X, axis = 1)
-    sample_iqr = np.subtract(*np.percentile(X, [75, 25], axis = 1))
+    sample_median = np.nanmedian(X, axis = 1)
+    sample_iqr = (
+        np.nanpercentile(X, 75, axis = 1) -
+        np.nanpercentile(X, 25, axis = 1)
+    )
     sample_iqr[sample_iqr == 0] = 1.0
 
     # Compute global median and IQR across samples
-    global_median = np.median(X)
-    global_iqr = np.subtract(*np.percentile(X, [75, 25]))
+    global_median = np.nanmedian(X)
+    global_iqr = (
+        np.nanpercentile(X, 75) -
+        np.nanpercentile(X, 25)
+    )
     if global_iqr == 0: global_iqr = 1.0
 
     # Scale each sample to match the global median and IQR
@@ -112,40 +118,6 @@ def filter_variance(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     return adata
 
 
-def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-6) -> ad.AnnData:
-    """
-    Converts beta values in a CpG matrix AnnData object to M-values using the 
-    logit-transformation: M = log2(beta / (1 - beta)). This transformation 
-    produces unbounded, approximately homoscedastic values suitable for 
-    downstream modeling and batch correction.
-
-    Conversion should be performed after normalization and before batch 
-    correction.
-
-    Parameters
-    ----------
-    adata : ad.AnnData
-        AnnData object representing a project's DNA methylation data at the 
-        CpG matrix level.
-
-    Returns
-    -------
-    ad.AnnData
-        AnnData object with M-values in .X and updated preprocessing metadata.
-    """
-
-    # Clip beta values to avoid division by zero or log(0)
-    X = np.array(adata.X, copy = True).astype(np.float32)
-    X = np.clip(X, epsilon, 1 - epsilon)
-    adata.X = np.log2(X / (1 - X))
-
-    # Store metadata
-    adata.uns['preprocessing_steps'].append('convert_to_mval')
-    adata.uns['conversion'] = 'm_value'
-
-    return adata
-
-
 def impute(adata: ad.AnnData):
     """
     Imputes missing beta values in a CpG matrix AnnData object per probe using 
@@ -185,6 +157,40 @@ def impute(adata: ad.AnnData):
     adata.var['impute_value'] = col_mean
 
     adata.uns['preprocessing_steps'].append('impute')
+
+    return adata
+
+
+def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-6) -> ad.AnnData:
+    """
+    Converts beta values in a CpG matrix AnnData object to M-values using the 
+    logit-transformation: M = log2(beta / (1 - beta)). This transformation 
+    produces unbounded, approximately homoscedastic values suitable for 
+    downstream modeling and batch correction.
+
+    Conversion should be performed after normalization and before batch 
+    correction.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object representing a project's DNA methylation data at the 
+        CpG matrix level.
+
+    Returns
+    -------
+    ad.AnnData
+        AnnData object with M-values in .X and updated preprocessing metadata.
+    """
+
+    # Clip beta values to avoid division by zero or log(0)
+    X = np.array(adata.X, copy = True).astype(np.float32)
+    X = np.clip(X, epsilon, 1 - epsilon)
+    adata.X = np.log2(X / (1 - X))
+
+    # Store metadata
+    adata.uns['preprocessing_steps'].append('convert_to_mval')
+    adata.uns['conversion'] = 'm_value'
 
     return adata
 

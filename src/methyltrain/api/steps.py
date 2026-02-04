@@ -260,8 +260,8 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     
     1. Normalization / Harmonization
     2. Filter low variance / extreme values
-    3. M-value conversion
-    4. Imputation of missing values
+    3. Imputation of missing values
+    4. M-value conversion 
 
     Note that batch effect correction is optionally performed after multiple 
     projects have been aggregated into a cohort.
@@ -288,11 +288,11 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     if config.get('toggles', {}).get('filter_variance', True):
         adata = filter_variance(adata, config)
 
-    if config.get('toggles', {}).get('convert_to_mval', True):
-        adata = convert_to_mval(adata)
-
     if config.get('toggles', {}).get('impute', True):
         adata = impute(adata)
+
+    if config.get('toggles', {}).get('convert_to_mval', True):
+        adata = convert_to_mval(adata)
 
     adata.uns['state'] = 'processed'
 

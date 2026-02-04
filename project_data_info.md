@@ -33,15 +33,7 @@ Downloaded Status
 
 
 To-Do:
-- adding normalization, batch correction, variance filtering to workflow
-- M-value transformation as well
 
+- debug everything
 
-
-
-- batch_correction (ComBat-seq, M-values) -> AFTER AGGREGATION
-    - checks if M-value toggled, use one approach per
-
-- add batch variables from metadata
-- steps.py/preprocess(): add everything
-- update configs to match default
+- update configs to match default -> hhahahakjfdghkgfdkhfgd

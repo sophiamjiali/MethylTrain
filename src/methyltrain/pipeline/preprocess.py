@@ -231,7 +231,7 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     
     # Ensure batch and covariate columns exist
     batch_cfg = config.get('preprocessing', {}).get('batch_correction', {})
-    batch_key = batch_cfg.get('batch_key', 'plate')
+    batch_key = batch_cfg.get('batch_key', 'aliquot_id')
     covariates = batch_cfg.get('covariates', ['project_id'])
 
     for col in [batch_key] + covariates:

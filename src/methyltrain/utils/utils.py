@@ -229,11 +229,34 @@ def verify_gdc_client(gdc_client_path) -> None:
             "and ensure it is available in your PATH."
         )
 
-def extract_project_id(cases):
+def extract_project_id_w_cases(cases):
     # Helper to extract nested metadata fields
     try:
         return (cases[0]['project']['project_id'] if cases 
-                and cases[0].get('samples') else pd.NA)
+                and cases[0].get('project') else pd.NA)
+    except Exception:
+        return pd.NA
+    
+def extract_project_id_w_project(project):
+    # Helper to extract nested metadata fields
+    try:
+        return (project['project_id'] if project else pd.NA)
+    except Exception:
+        return pd.NA
+    
+def extract_file_id(files):
+    # Helper to extract nested metadata fields
+    try:
+        return (files[0]['file_id'] if files 
+                and files[0].get('file_id') else pd.NA)
+    except Exception:
+        return pd.NA
+    
+def extract_file_name(files):
+    # Helper to extract nested metadata fields
+    try:
+        return (files[0]['file_name'] if files 
+                and files[0].get('file_name') else pd.NA)
     except Exception:
         return pd.NA
 
@@ -252,11 +275,12 @@ def extract_submitter_id(cases):
     except Exception:
         return pd.NA
     
-def extract_plate(cases):
+def extract_aliquot_id(samples):
     # Helper to extract nested metadata fields
+    field = (samples[0]['portions'][0]['analytes'][0]
+             ['aliquots'][0]['aliquot_id'])
     try:
-        return (cases[0]['samples'][0]['biospecimen'] if cases 
-                and cases[0].get('bcr_plate_id') else pd.NA)
+        return (field if samples else pd.NA)
     except Exception:
         return pd.NA
         

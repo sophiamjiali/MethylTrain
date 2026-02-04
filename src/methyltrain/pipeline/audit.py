@@ -31,14 +31,11 @@ def initialize_audit_table(manifest: pd.DataFrame,
         placeholders for metadata and quality control stages.
     """
 
-    # Merge the manifest with the status log on the file ID
+    # Merge the manifest with the status log on the file ID (index)
     audit_table = manifest.merge(
-        status_log[['id', 'status', 'attempts', 'timestamp']],
-        on = 'id',
-        how = 'left'
+        status_log[['status', 'attempts', 'timestamp']],
+        how = 'left', left_index = True, right_index = True
     )
-
-    audit_table = audit_table.rename(columns = {'id': 'file_id'})
 
     # Set standard flags
     audit_table['downloaded'] = (audit_table['status'] == 'success').astype(int)
@@ -52,12 +49,38 @@ def initialize_audit_table(manifest: pd.DataFrame,
     # Initialize future-stage columns
     audit_table['metadata_fetched'] = pd.NA
     audit_table['metadata_status'] = pd.NA
+    audit_table['biospecimen_fetched'] = pd.NA
+    audit_table['biospecimen_status'] = pd.NA
     audit_table['qc_pass'] = pd.NA
     audit_table['parquet_path'] = pd.NA
     audit_table['parquet_path'] = audit_table['parquet_path'].astype("object")
     audit_table['notes'] = ""
 
-    # Initialize table index to the file identifier
-    audit_table = audit_table.set_index("file_id", drop = True)
+    return audit_table
+
+
+def update_metadata(audit_table: pd.DataFrame, 
+                    metadata: pd.DataFrame) -> pd.DataFrame:
+    # Updates the audit_table with the metadata
+
+    audit_table = audit_table.merge(metadata[['status']], how = 'left',
+                                    left_index = True, right_index = True)
+    audit_table['metadata_fetched'] = (audit_table['status']
+                                       .eq('success').astype(int))
+    audit_table['metadata_status'] = audit_table['status']
+    audit_table = audit_table.drop(columns = 'status')
+
+    return audit_table
+
+def update_biospecimen(audit_table: pd.DataFrame, 
+                       biospecimen: pd.DataFrame) -> pd.DataFrame:
+    # Updates the audit_table with the biospecimen metadata
+
+    audit_table = audit_table.merge(biospecimen[['status']], how = 'left',
+                                    left_index = True, right_index = True)
+    audit_table['biospecimen_fetched'] = (audit_table['status']
+                                         .eq('success').astype(int))
+    audit_table['biospecimen_status'] = audit_table['status']
+    audit_table = audit_table.drop(columns = 'status')
 
     return audit_table

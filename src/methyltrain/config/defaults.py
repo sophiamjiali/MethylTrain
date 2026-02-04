@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
         "platform":              "Illumina Human Methylation 450",
         "sample_type":           "Primary Tumor",
 
-        # Fields to request from the query
+        # Fields to request from the metadata query
         "metadata": [
             'file_id',
             'file_name',
@@ -41,6 +41,12 @@ DEFAULT_CONFIG = {
             'platform',                  #  | to query for here for facilitating
             'reference_genome',          #  | further downstream analysis
             'cases.biospecimen.bcr_plate_id'
+        ],
+
+        # Fields to request from the biospecimen query
+        "biospecimen": [
+            'files.file_id',
+            'samples.portions.analytes.aliquots.aliquot_id',
         ]
     },
 

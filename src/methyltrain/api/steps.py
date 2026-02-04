@@ -20,6 +20,7 @@ from pathlib import Path
 from ..pipeline.download import (
     build_manifest, 
     build_metadata,
+    build_biospecimen,
     download_methylation
 )
 from ..pipeline.preprocess import (
@@ -29,18 +30,24 @@ from ..pipeline.preprocess import (
     impute, 
     batch_correction
 )
-from ..pipeline.audit import initialize_audit_table
+from ..pipeline.audit import (
+    initialize_audit_table,
+    update_metadata,
+    update_biospecimen
+)
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
 from ..utils.utils import load_sample, load_annotation
+from ..utils.load_utils import load_metadata, load_biospecimen
 from ..fs.layout import ProjectLayout, CohortLayout
 
 
 # =====| Workflow |=============================================================
 
 def download(config: Dict, 
-             layout: ProjectLayout) -> pd.DataFrame:
+             layout: ProjectLayout,
+             verbose = False) -> pd.DataFrame:
     """
     Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. An audit table is built to standardize all attempted files, download status, and metadata status.
 
@@ -75,27 +82,25 @@ def download(config: Dict,
 
     # Build a manifest of available files and attempt to download them
     manifest = build_manifest(config)
-    status_log = download_methylation(manifest, config, layout)
+    status_log = download_methylation(manifest, config, layout, verbose)
 
     # Build an audit table to hold file status flags to query for metadata
     audit_table = initialize_audit_table(manifest, status_log)
     metadata = build_metadata(audit_table, config)
+    biospecimen = build_biospecimen(audit_table, config)
 
-    # Update the audit table with metadata attempts (rare)
-    audit_table = audit_table.merge(metadata[['status']], how = 'left',
-                                    left_index = True, right_index = True)
-    audit_table['metadata_fetched'] = (audit_table['status']
-                                       .eq('success').astype(int))
-    audit_table['metadata_status'] = audit_table['status']
-    audit_table = audit_table.drop(columns = 'status')
+    # Update the audit table with the metadata
+    audit_table = update_metadata(audit_table, metadata)
+    audit_table = update_biospecimen(audit_table, biospecimen)
 
     # Clean the metadata of verbose output to the standard format
     metadata = metadata.loc[metadata['status'] == 'success']
 
     # Save manifest, status log, metadata, and audit table
-    manifest.to_csv(layout.manifest, sep = '\t', header=True, index=False)
-    status_log.to_csv(layout.status_log, sep = '\t', header=True, index=False)
-    metadata.to_csv(layout.metadata, sep = '\t', header=True, index=False)
+    manifest.to_csv(layout.manifest, sep = '\t', header=True, index=True)
+    status_log.to_csv(layout.status_log, sep = '\t', header=True, index=True)
+    metadata.to_csv(layout.metadata, sep = '\t', header=True, index=True)
+    biospecimen.to_csv(layout.biospecimen, sep = '\t', header=True, index=True)
     audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=True)
 
     return audit_table
@@ -131,7 +136,7 @@ def clean_data(audit_table: pd.DataFrame,
     downloaded = audit_table.loc[audit_table['downloaded'] == 1].copy()
     for idx, row in downloaded.iterrows():
         file_id = str(idx)
-        file_name = row['filename']
+        file_name = row['file_name']
 
         if pd.notna(row['parquet_path']): continue
 
@@ -515,7 +520,9 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     used to align sample IDs using the metadata.
 
     Assumes metadata is perfectly alligned with the data available in the 
-    project raw data directory (as per the download() function).
+    project raw data directory (as per the download() function). Adds 
+    biospecimen data (aliquot_id) to the metadata from the downloaded 
+    biospecimen metadata for downstream batch correction.
 
     Default behaviour resolves case-level duplicates (aliquots) by retaining 
     only the first replicate. Performing mean aggregation across aliquots is not
@@ -560,9 +567,14 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     cpg_matrix = pd.concat(sample_beta_values, axis = 1, join = "outer")
     cpg_matrix = cpg_matrix.sort_index()
 
+    # Collapse aliquot_id from biospecimen into the main metadata
+    metadata = load_metadata(layout)
+    biospecimen = load_biospecimen(layout)
+    metadata = metadata.merge(biospecimen['aliquot_id'], how = 'left',
+                              left_index = True, right_index = True)
+
     # Sort by file name as .parquets are loaded in that order
-    metadata = pd.read_csv(layout.metadata, sep = '\t')
-    metadata = metadata.set_index('file_name', drop = True).sort_index()
+    metadata = metadata.sort_values(by = 'file_name')
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     adata = ad.AnnData(
@@ -631,38 +643,5 @@ def save_project(adata: ad.AnnData, layout: ProjectLayout) -> None:
 
     layout.validate()
     adata.write_h5ad(layout.project_adata, compression = "gzip")
-
-
-# =====| Metadata I/O |=========================================================
-
-def load_audit_table(layout: ProjectLayout) -> pd.DataFrame:
-    # Loads the audit table with file_id as index
-
-    layout.validate()
-    audit_table = pd.read_csv(layout.audit_table, sep = '\t', index_col = 0)
-    return audit_table
-
-
-def load_metadata(layout: ProjectLayout) -> pd.DataFrame:
-    # Loads the metadata table with file_id as index
-
-    layout.validate()
-    metadata = pd.read_csv(layout.metadata, sep = '\t', index_col = 0)
-    return metadata
-
-
-def load_manifest(layout: ProjectLayout) -> pd.DataFrame:
-    # Loads the manifest with file_id as index
-
-    layout.validate()
-    manifest = pd.read_csv(layout.manifest, sep = '\t', index_col = 0)
-    return manifest
-
-
-def load_status_log(layout: ProjectLayout) -> pd.DataFrame:
-    # Loads the status log with file_id as index
-    layout.validate()
-    status_log = pd.read_csv(layout.status_log, sep = '\t', index_col = 0)
-    return status_log
 
 # [END]

@@ -147,6 +147,9 @@ class ProjectLayout:
     metadata : str or Path, optional
         Path for the metadata file. Overrides `root_dir` default if 
         provided.
+    biospecimen : str or Path, optional
+        Path for the biospecimen file. Overrides `root_dir` default if 
+        provided.
     manifest : str or Path, optional
         Path for the raw manifest file. Overrides `root_dir` default if 
         provided.
@@ -163,6 +166,7 @@ class ProjectLayout:
     raw_dir : Path
     audit_table : Path
     metadata : Path
+    biospecimen : Path
     manifest: Path
     status_log : Path
     project_adata : Path
@@ -174,6 +178,7 @@ class ProjectLayout:
                  raw_dir: Optional[StrPath] = None,
                  audit_table: Optional[StrPath] = None,
                  metadata: Optional[StrPath] = None,
+                 biospecimen: Optional[StrPath] = None,
                  manifest: Optional[StrPath] = None,
                  status_log: Optional[StrPath] = None,
                  project_adata: Optional[StrPath] = None):
@@ -189,34 +194,40 @@ class ProjectLayout:
         
         self.audit_table: Path = (
             Path(audit_table) if audit_table is not None
-            else root_path / f"{project_name}_audit_table.csv"
+            else root_path / 'metadata' / f"{project_name}_audit_table.csv"
         )
         
         self.metadata: Path = (
             Path(metadata) if metadata is not None 
-            else root_path / f"{project_name}_metadata.csv"
+            else root_path / 'metadata' / f"{project_name}_metadata.csv"
+        )
+
+        self.biospecimen: Path = (
+            Path(biospecimen) if biospecimen is not None 
+            else root_path / 'metadata'/ f"{project_name}_biospecimen.csv"
         )
 
         self.manifest: Path = (
             Path(manifest) if manifest is not None 
-            else root_path / f"{project_name}_manifest.csv"
+            else root_path / 'metadata'/ f"{project_name}_manifest.csv"
         )
 
         self.status_log: Path = (
             Path(status_log) if status_log is not None
-            else root_path / f"{project_name}_status_log.csv"
+            else root_path / 'metadata'/ f"{project_name}_status_log.csv"
         )
 
         self.project_adata: Path = (
             Path(project_adata) if project_adata is not None else 
-            root_path / f"{project_name}_adata.h5ad"
+            root_path / 'processed' / f"{project_name}_adata.h5ad"
         )
 
         self.paths = [self.raw_dir, self.metadata, self.manifest, 
-                      self.audit_table, self.status_log, self.project_adata]
+                      self.audit_table, self.status_log, self.project_adata,
+                      self.biospecimen]
         
         self.files = [self.audit_table, self.metadata, self.manifest, 
-                      self.status_log]
+                      self.status_log, self.biospecimen]
 
 
     def initialize(self):

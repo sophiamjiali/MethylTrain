@@ -20,7 +20,6 @@ from pathlib import Path
 from ..pipeline.download import (
     build_manifest, 
     build_metadata,
-    build_biospecimen,
     download_methylation
 )
 from ..pipeline.preprocess import (
@@ -32,14 +31,13 @@ from ..pipeline.preprocess import (
 )
 from ..pipeline.audit import (
     initialize_audit_table,
-    update_metadata,
-    update_biospecimen
+    update_metadata
 )
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
 from ..utils.utils import load_sample, load_annotation
-from ..utils.load_utils import load_metadata, load_biospecimen
+from ..utils.load_utils import load_metadata
 from ..fs.layout import ProjectLayout, CohortLayout
 
 
@@ -87,11 +85,9 @@ def download(config: Dict,
     # Build an audit table to hold file status flags to query for metadata
     audit_table = initialize_audit_table(manifest, status_log)
     metadata = build_metadata(audit_table, config)
-    biospecimen = build_biospecimen(audit_table, config)
 
     # Update the audit table with the metadata
     audit_table = update_metadata(audit_table, metadata)
-    audit_table = update_biospecimen(audit_table, biospecimen)
 
     # Clean the metadata of verbose output to the standard format
     metadata = metadata.loc[metadata['status'] == 'success']
@@ -100,7 +96,6 @@ def download(config: Dict,
     manifest.to_csv(layout.manifest, sep = '\t', header=True, index=True)
     status_log.to_csv(layout.status_log, sep = '\t', header=True, index=True)
     metadata.to_csv(layout.metadata, sep = '\t', header=True, index=True)
-    biospecimen.to_csv(layout.biospecimen, sep = '\t', header=True, index=True)
     audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=True)
 
     return audit_table
@@ -283,9 +278,6 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     # Perform each preprocessing step if toggled by the user-configurations
     if config.get('toggles', {}).get('normalize', True):
         adata = normalize(adata)
-
-    if config.get('toggles', {}).get('sample_qc', True):
-        adata = impute(adata)
 
     if config.get('toggles', {}).get('filter_variance', True):
         adata = filter_variance(adata, config)
@@ -520,9 +512,7 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     used to align sample IDs using the metadata.
 
     Assumes metadata is perfectly alligned with the data available in the 
-    project raw data directory (as per the download() function). Adds 
-    biospecimen data (aliquot_id) to the metadata from the downloaded 
-    biospecimen metadata for downstream batch correction.
+    project raw data directory (as per the download() function).
 
     Default behaviour resolves case-level duplicates (aliquots) by retaining 
     only the first replicate. Performing mean aggregation across aliquots is not
@@ -567,13 +557,8 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     cpg_matrix = pd.concat(sample_beta_values, axis = 1, join = "outer")
     cpg_matrix = cpg_matrix.sort_index()
 
-    # Collapse aliquot_id from biospecimen into the main metadata
-    metadata = load_metadata(layout)
-    biospecimen = load_biospecimen(layout)
-    metadata = metadata.merge(biospecimen['aliquot_id'], how = 'left',
-                              left_index = True, right_index = True)
-
     # Sort by file name as .parquets are loaded in that order
+    metadata = load_metadata(layout)
     metadata = metadata.sort_values(by = 'file_name')
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata

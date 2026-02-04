@@ -71,16 +71,3 @@ def update_metadata(audit_table: pd.DataFrame,
     audit_table = audit_table.drop(columns = 'status')
 
     return audit_table
-
-def update_biospecimen(audit_table: pd.DataFrame, 
-                       biospecimen: pd.DataFrame) -> pd.DataFrame:
-    # Updates the audit_table with the biospecimen metadata
-
-    audit_table = audit_table.merge(biospecimen[['status']], how = 'left',
-                                    left_index = True, right_index = True)
-    audit_table['biospecimen_fetched'] = (audit_table['status']
-                                         .eq('success').astype(int))
-    audit_table['biospecimen_status'] = audit_table['status']
-    audit_table = audit_table.drop(columns = 'status')
-
-    return audit_table

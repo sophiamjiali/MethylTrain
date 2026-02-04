@@ -21,13 +21,10 @@ from ..fs.layout import ProjectLayout
 from ..constants import GDC_QUERY_URL, MAX_RETRIES, GDC_BIOSPECIMEN_URL
 from ..utils.utils import (
     verify_gdc_client,
-    extract_project_id_w_cases,
-    extract_project_id_w_project,
+    extract_project_id,
     extract_sample_type,
     extract_submitter_id,
-    extract_file_id,
-    extract_aliquot_id,
-    extract_file_name
+    extract_aliquot_id
 )
 from ..utils.load_utils import load_status_log
 
@@ -181,10 +178,10 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
 
     # Extract nested metadata values
     if 'cases' in metadata.columns:
-        metadata['project_id'] = (metadata['cases']
-                                  .apply(extract_project_id_w_cases))
+        metadata['project_id'] = (metadata['cases'].apply(extract_project_id))
         metadata['submitter_id'] = metadata['cases'].apply(extract_submitter_id)
         metadata['sample_type'] = metadata['cases'].apply(extract_sample_type)
+        metadata['aliquot_id'] = metadata['cases'].apply(extract_aliquot_id)
         metadata = metadata.drop(columns = ['cases'])
 
     # Update fetched status based on GDC response failures
@@ -204,69 +201,6 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
     metadata = metadata.set_index('file_id', drop = True)
 
     return metadata
-
-
-def build_biospecimen(audit_table: pd.DataFrame, config: Dict) -> pd.DataFrame:
-    # Queries for biospecimen metadata
-
-    # Fetch files that were successfully downloaded
-    file_ids = audit_table.loc[audit_table['downloaded'] == 1].index.tolist()
-    if not file_ids: return pd.DataFrame()
-
-    # Prepare the GDC API request
-    filters = {'op': 'in', 'content': {'field': 'files.file_id', 
-                                       'value': file_ids}}
-    fields = config.get('download', {}).get('biospecimen', [])
-    
-    params = {
-        'filters': json.dumps(filters),
-        'fields': ','.join(fields),
-        'format': 'JSON',
-        'size': len(file_ids)
-    }
-
-    # Return an empty dataframe if API request fails
-    try:
-        response = requests.get(GDC_BIOSPECIMEN_URL, params = params)
-        response.raise_for_status()
-        hits = response.json()['data']['hits']
-
-    except Exception:
-        return pd.DataFrame({
-            'file_id': file_ids,
-            'status': ['failed'] * len(file_ids)
-        })
-    
-    # Drop the internal query UUID from the table
-    biospec = pd.DataFrame(hits)
-    biospec = biospec.drop(columns = ['id'])
-
-    # Extract nested metadata values
-    if 'samples' in biospec.columns:
-        biospec['aliquot_id'] = biospec['samples'].apply(extract_aliquot_id)
-        biospec = biospec.drop(columns = ['samples'])
-
-    if 'files' in biospec.columns:
-        biospec['file_id'] = biospec['files'].apply(extract_file_id)
-        biospec = biospec.drop(columns = ['files'])
-
-    # Update the fetched status based on GDC response failures
-    biospec['status'] = 'success'
-    
-    fetched_ids = set(biospec.index)
-    missing_ids = set(file_ids) - fetched_ids
-
-    if missing_ids:
-        missing = pd.DataFrame({
-            'file_id': list(missing_ids),
-            'status': ['failed'] * len(missing_ids)
-        })
-        biospec = pd.concat([biospec, missing], ignore_index = False)
-    
-    # Set the file_id as index
-    biospec = biospec.set_index('file_id', drop = True)
-
-    return biospec
 
 # =====| Download Methylation |=================================================
 
@@ -314,37 +248,31 @@ def download_methylation(manifest: pd.DataFrame,
         if not filepath.exists():
             missing_files.append(row)
 
-    # All data was downloaded, status log must have been generated
-    if not missing_files:
-        if verbose: print("All files were already downloaded.")
-        return load_status_log(layout)
-
-    remaining_files = pd.DataFrame(missing_files)
+    remaining_files = pd.DataFrame(missing_files).reset_index()
+    remaining_files = remaining_files.rename(columns = {'index': 'id', 
+                                                        'file_name': 'filename'})
     tmp_manifest = layout.raw_dir/f"{layout.project_name}_temp_manifest.txt"
-
-    if verbose: print(f"=====| Beginning to download {layout.project_name} DNA "
-                      f"Methylation Data |=====")
 
     attempt = 0
     while not remaining_files.empty and attempt < MAX_RETRIES:
         attempt += 1
 
         # Save a temporary manifest
-        remaining_files.to_csv(tmp_manifest, sep='\t', index = True)
+        remaining_files.to_csv(tmp_manifest, sep='\t', index = False)
 
         try:
 
             # Run batch download for remaining files
             cmd = [gdc_client_path,
-                   "download", 
-                   "-m", str(tmp_manifest), 
-                   "-d", str(layout.raw_dir)]
+                    "download", 
+                    "-m", str(tmp_manifest), 
+                    "-d", str(layout.raw_dir)]
 
             # Silence standard output, but keep errors for debugging
             subprocess.run(cmd, 
-                           check = True, 
-                           stdout = subprocess.DEVNULL, 
-                           stderr = sys.stderr)
+                            check = True, 
+                            stdout = subprocess.DEVNULL, 
+                            stderr = sys.stderr)
             
         except subprocess.CalledProcessError:
             # Log failure for this batch attempt, will retry failed files
@@ -354,15 +282,14 @@ def download_methylation(manifest: pd.DataFrame,
         # Check existence per file
         still_remaining = []
         for _, row in remaining_files.iterrows():
-            filepath = layout.raw_dir / row['file_name']
-
+            filepath = layout.raw_dir / row['id']
             if not filepath.exists():
                 still_remaining.append(row)
 
         # Prepare new manifest with only failed files
         if still_remaining:
             remaining_files = pd.DataFrame(still_remaining)
-            remaining_files.to_csv(tmp_manifest, sep = '\t', index = True)
+            remaining_files.to_csv(tmp_manifest, sep = '\t', index = False)
             time.sleep(2 ** attempt)
 
         else:

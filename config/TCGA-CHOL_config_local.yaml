@@ -27,13 +27,9 @@
         'data_type',
         'experimental_strategy',     # e.g. add mutational/clinical metadata
         'platform',                  #  | to query for here for facilitating
-        'reference_genome'           #  | further downstream analysis
-    ]
+        'reference_genome',          #  | further downstream analysis
+        'cases.samples.portions.analytes.aliquots.aliquot_id'
 
-    # Fields to request from the biospecimen query
-    "biospecimen": [
-        'files.file_id',
-        'samples.portions.analytes.aliquots.aliquot_id',
     ]
 
 "toggles":

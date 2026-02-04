@@ -42,8 +42,4 @@ def load_status_log(layout: ProjectLayout) -> pd.DataFrame:
     status_log = pd.read_csv(layout.status_log, sep = '\t', index_col = 0)
     return status_log
 
-def load_biospecimen(layout: ProjectLayout) -> pd.DataFrame:
-    # Loads the status log with file_id as index
-    layout.validate()
-    biospecimen = pd.read_csv(layout.biospecimen, sep = '\t', index_col = 0)
-    return biospecimen
+# [END]

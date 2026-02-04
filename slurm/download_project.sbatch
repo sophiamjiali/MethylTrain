@@ -1,7 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=download_project
-#SBATCH --output=/ddn_exa/campbell/sli/methyltrain/logs/download_project_%j.out
-#SBATCH --error=/ddn_exa/campbell/sli/methyltrain/logs/download_project_%j.err
+#SBATCH --output=/ddn_exa/campbell/sli/methyltrain/logs/%x_%j.out
+#SBATCH --error=/ddn_exa/campbell/sli/methyltrain/logs/%x_%j.err
 #SBATCH --time=12:00:00
 #SBATCH --partition=gpu
 #SBATCH --nodelist=gpu3

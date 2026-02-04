@@ -18,7 +18,7 @@ import pandas as pd
 from typing import Dict
 
 from ..fs.layout import ProjectLayout
-from ..constants import GDC_QUERY_URL, MAX_RETRIES, GDC_BIOSPECIMEN_URL
+from ..constants import GDC_QUERY_URL, MAX_RETRIES
 from ..utils.utils import (
     verify_gdc_client,
     extract_project_id,

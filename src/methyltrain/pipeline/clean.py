@@ -10,6 +10,7 @@ import pandas as pd
 import anndata as ad
 
 from ..fs.layout import ProjectLayout
+from ..utils.load_utils import save_metadata, load_metadata
 
 # =====| Clean Metadata |=======================================================
 
@@ -44,6 +45,6 @@ def clean_metadata(adata: ad.AnnData, layout: ProjectLayout) -> None:
                          "extension `.csv`.")
     
     # Filter out samples that didn't survive quality control
-    metadata = pd.read_csv(layout.metadata, sep = '\t')
-    metadata = metadata[metadata['file_id'].isin(adata.obs['file_id'])]
-    metadata.to_csv(layout.metadata, sep = '\t', header=True, index=False)
+    metadata = load_metadata(layout)
+    metadata = metadata[metadata.index.isin(adata.obs.index)]
+    save_metadata(metadata, layout)

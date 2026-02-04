@@ -33,11 +33,18 @@ from ..pipeline.audit import (
     initialize_audit_table,
     update_metadata
 )
+from ..utils.load_utils import (
+    load_metadata, 
+    save_metadata,
+    save_audit_table,
+    save_manifest,
+    save_status_log
+)
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
 from ..utils.utils import load_sample, load_annotation
-from ..utils.load_utils import load_metadata
+
 from ..fs.layout import ProjectLayout, CohortLayout
 
 
@@ -93,10 +100,10 @@ def download(config: Dict,
     metadata = metadata.loc[metadata['status'] == 'success']
 
     # Save manifest, status log, metadata, and audit table
-    manifest.to_csv(layout.manifest, sep = '\t', header=True, index=True)
-    status_log.to_csv(layout.status_log, sep = '\t', header=True, index=True)
-    metadata.to_csv(layout.metadata, sep = '\t', header=True, index=True)
-    audit_table.to_csv(layout.audit_table, sep = '\t', header=True, index=True)
+    save_manifest(manifest, layout)
+    save_status_log(status_log, layout)
+    save_metadata(metadata, layout)
+    save_audit_table(audit_table, layout)
 
     return audit_table
 
@@ -222,9 +229,9 @@ def quality_control(adata: ad.AnnData,
     
     if toggles.get('sample_qc', True):
 
-        before_qc = set(adata.obs['file_id'])
+        before_qc = set(adata.obs.index)
         adata = sample_qc(adata, config)
-        after_qc = set(adata.obs['file_id'])
+        after_qc = set(adata.obs.index)
 
         fail_qc = before_qc - after_qc
 
@@ -237,7 +244,6 @@ def quality_control(adata: ad.AnnData,
 
     # Clean the metadata and manifest; if no QC performed, same as raw
     clean_metadata(adata, layout)
-
     adata.uns['state'] = 'processed'
 
     return (adata, audit_table)

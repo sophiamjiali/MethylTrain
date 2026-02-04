@@ -49,8 +49,6 @@ def initialize_audit_table(manifest: pd.DataFrame,
     # Initialize future-stage columns
     audit_table['metadata_fetched'] = pd.NA
     audit_table['metadata_status'] = pd.NA
-    audit_table['biospecimen_fetched'] = pd.NA
-    audit_table['biospecimen_status'] = pd.NA
     audit_table['qc_pass'] = pd.NA
     audit_table['parquet_path'] = pd.NA
     audit_table['parquet_path'] = audit_table['parquet_path'].astype("object")

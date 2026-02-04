@@ -72,7 +72,9 @@ def probe_qc(adata: ad.AnnData,
              annotation: pd.DataFrame, 
              config: Dict) -> ad.AnnData:
     """
-    Performs probe-level quality control upon DNA methylation values presented as a CpG matrix AnnData object. Returns the quality-controlled CpG matrix AnnData object with updated metadata suitable for further preprocessing.
+    Performs probe-level quality control upon DNA methylation values presented 
+    as a CpG matrix AnnData object. Returns the quality-controlled CpG matrix 
+    AnnData object with updated metadata suitable for further preprocessing.
 
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:

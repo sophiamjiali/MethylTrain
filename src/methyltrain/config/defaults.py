@@ -40,7 +40,7 @@ DEFAULT_CONFIG = {
             'experimental_strategy',     # e.g. add mutational/clinical metadata
             'platform',                  #  | to query for here for facilitating
             'reference_genome',          #  | further downstream analysis
-            'cases.biospecimen.bcr_plate_id'
+            'cases.samples.portions.analytes.aliquots.aliquot_id'
         ],
 
         # Fields to request from the biospecimen query
@@ -91,7 +91,7 @@ DEFAULT_CONFIG = {
         },
 
         "batch_correction": {
-            "batch_key": "plate",
+            "batch_key": "aliquot_id",
             "covariates": ["project_id"]    # Synonymous with CancerType
         },
 

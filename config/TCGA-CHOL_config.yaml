@@ -16,7 +16,7 @@
     "platform":              "Illumina Human Methylation 450" 
     "sample_type":           "Primary Tumor"
 
-    # Fields to request from the query
+    # Fields to request from the metadata query
     "metadata": [
         'file_id',
         'file_name',
@@ -28,19 +28,20 @@
         'experimental_strategy',     # e.g. add mutational/clinical metadata
         'platform',                  #  | to query for here for facilitating
         'reference_genome',          #  | further downstream analysis
-        'cases.biospecimen.bcr_plate_id'
+        'cases.samples.portions.analytes.aliquots.aliquot_id'
+
     ]
 
 "toggles":
 
-    "sample_qc":        True,
-    "probe_qc":         True,
-    "normalize":        True,    # Perform beta-scale normalization
-    "filter_variance":  True,    # Filters low variance or extreme probes
-    "convert_to_mval":  True,    # Convert beta values to M-values
-    "imputation":       True,    # Perform imputation, else default to 0
-    "batch_correction": True,    # Perform batch correction upon cohort
-    "gene_aggregation": False,   # Aggregates cohort beta values to genes
+    "sample_qc":        True
+    "probe_qc":         True
+    "normalize":        True     # Perform beta-scale normalization
+    "filter_variance":  True     # Filters low variance or extreme probes
+    "convert_to_mval":  True     # Convert beta values to M-values
+    "imputation":       True     # Perform imputation, else default to 0
+    "batch_correction": True     # Perform batch correction upon cohort
+    "gene_aggregation": False    # Aggregates cohort beta values to genes
     "winsorize":        False    # Clip extreme values for ML stability
 
 "quality_control":
@@ -65,7 +66,7 @@
         "max_mean":     0.99
 
     "batch_correction":
-        "batch_key": "plate"
+        "batch_key": "aliquot_id"
         "covariates": ["project_id"]    # Synonymous with CancerType
 
     "clip_values": [0.001, 0.999]

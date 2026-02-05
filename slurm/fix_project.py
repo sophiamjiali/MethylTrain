@@ -23,9 +23,6 @@ def main():
     config = load_config(args.config)
     project = config.get('project_id', '')
 
-    if args.verbose: 
-        print(f"=====| Beginning to process project {project} |=====")
-
     # Initialize the default project layout
     layout = ProjectLayout(
         project_name = project,
@@ -44,9 +41,6 @@ def main():
     metadata = build_metadata(audit_table, config)
 
     save_metadata(metadata, layout)
-
-    if args.verbose: 
-        print(f"=====| Finished processing project {project} |=====")
         
 
 if __name__ == "__main__":

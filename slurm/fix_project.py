@@ -1,29 +1,22 @@
 #!/usr/bin/env python3
-# ==============================================================================
-# Script:           prepare_project.py
-# Purpose:          Downloads and processes and TCGA Project dataset
-# Author:           Sophia Li
-# Affiliation:      CCG Lab, Princess Margaret Cancer Center, UHN, UofT
-# Date:             2026-01-26
-# ==============================================================================
 
 import argparse
+from sys import audit
 
 from methyltrain.api.prepare import prepare_dataset
 from methyltrain.config.loader import load_config
 from methyltrain.fs.layout import ProjectLayout
 from methyltrain.api.steps import save_project
-from methyltrain.utils.load_utils import save_audit_table
+from methyltrain.pipeline.download import build_metadata
+from methyltrain.utils.load_utils import (
+    save_audit_table, load_audit_table, save_metadata
+)
 
 def main():
 
     # Parse the arguments provided to the entry-point script
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type = str, required = True)
-    parser.add_argument("--verbose", action = "store_true", 
-                        help = "Enable verbose logging")
-    parser.add_argument("--clean-raw-data", action = "store_true", 
-                        help = "Delete raw data")
     args = parser.parse_args()
 
     # Load the user-provided configurations
@@ -47,16 +40,10 @@ def main():
     layout.initialize()
     layout.validate()
 
-    adata, audit_table = prepare_dataset(config, layout, args.verbose)
-    save_project(adata, layout)
+    audit_table = load_audit_table(layout)
+    metadata = build_metadata(audit_table, config)
 
-    # Save the updated audit table
-    save_audit_table(audit_table, layout)
-
-    # Optional clean-up: remove raw data, manifest and audit table persists
-    if args.clean_raw_data: 
-        for parquet_file in layout.raw_dir.glob("*.parquet"):
-            parquet_file.unlink()
+    save_metadata(metadata, layout)
 
     if args.verbose: 
         print(f"=====| Finished processing project {project} |=====")

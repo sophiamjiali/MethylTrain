@@ -1,7 +1,7 @@
 # Path to the gdc-client executable
 "gdc_client": "/Volumes/FBI_Drive/gdc-client"
 
-"project_id":       "TCGA-CHOL"
+"project_id":       "TCGA-ESCA"
 "reference_genome": "GRCh37"    # Default for TCGA 450K era
 
 "seed": 42

@@ -15,7 +15,7 @@ import datetime
 
 import pandas as pd
 
-from typing import Dict
+from typing import Dict, List
 
 from ..fs.layout import ProjectLayout
 from ..constants import GDC_QUERY_URL, MAX_RETRIES
@@ -126,7 +126,9 @@ def build_manifest(config: Dict) -> pd.DataFrame:
     return manifest
 
 
-def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
+def build_metadata(audit_table: pd.DataFrame,
+                   config: Dict, 
+                   batch_size: int = 20) -> pd.DataFrame:
     """
     Query GDC for metadata corresponding to successfully downloaded files in the audit table. Nested fields are flattened to a single level.
 
@@ -150,30 +152,35 @@ def build_metadata(audit_table: pd.DataFrame, config: Dict,) -> pd.DataFrame:
     if not file_ids: return pd.DataFrame()
 
     # Prepare the GDC API request
-    filters = {'op': 'in','content': {'field': 'file_id', 'value': file_ids}}
     metadata_fields = config.get('download', {}).get('metadata', [])
+    all_hits: List[dict] = []
 
-    params = {
-        'filters': json.dumps(filters),
-        'fields': ','.join(metadata_fields),
-        'format': 'JSON',
-        'size': len(file_ids)
-    }
+    # Query the metadata in batches to avoid API failures
+    for i in range(0, len(file_ids), batch_size):
+        batch = file_ids[i:i + batch_size]
 
-    # Return an empty dataframe if API request fails
-    try:
-        response = requests.get(GDC_QUERY_URL, params = params)
-        response.raise_for_status()
-        hits = response.json()['data']['hits']
+        filters = {'op': 'in','content': {'field': 'file_id', 'value': batch}}
+        params = {
+            'filters': json.dumps(filters),
+            'fields': ','.join(metadata_fields),
+            'format': 'JSON',
+            'size': len(file_ids)
+        }
 
-    except Exception:
-        return pd.DataFrame({
-            'file_id': file_ids,
-            'status': ['failed'] * len(file_ids)
-        })
+        # Return an empty dataframe if API request fails
+        try:
+            response = requests.get(GDC_QUERY_URL, params = params)
+            response.raise_for_status()
+            hits = response.json()['data']['hits']
+            all_hits.extend(hits)
+
+        # Mark entire batch as failure
+        except Exception:
+            for fid in batch:
+                all_hits.append({'file_id': fid, 'status': 'failed'})
     
     # Drop the internal query UUID from the table
-    metadata = pd.DataFrame(hits)
+    metadata = pd.DataFrame(all_hits)
     metadata = metadata.drop(columns = ['id'])
 
     # Extract nested metadata values

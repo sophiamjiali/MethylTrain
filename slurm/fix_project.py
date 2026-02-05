@@ -38,7 +38,6 @@ def main():
     layout.validate()
 
     audit_table = load_audit_table(layout)
-    audit_table = audit_table[1:4]
     metadata = build_metadata(audit_table, config)
 
     save_metadata(metadata, layout)

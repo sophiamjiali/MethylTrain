@@ -23,7 +23,8 @@ from .steps import (
     winsorize,
     split,
     load_raw_project,
-    load_processed_project
+    load_processed_project,
+    save_cohort
 )
 
 # =====| Exposed Functions |====================================================
@@ -114,6 +115,9 @@ def prepare_cohort(config: Dict,
     # Winsorize values of 0 or 1 to promote downstream ML stability
     if config.get('toggles', {}).get('winsorization', True):
         cohort_adata = winsorize(cohort_adata, config)
+
+    # Save the processed cohort adata prior to splitting
+    save_cohort(cohort_adata, layout)
 
     # Split the cohort AnnData object into train-val-test splits
     train_adata, val_adata, test_adata = split(cohort_adata, config)

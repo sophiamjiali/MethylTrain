@@ -61,20 +61,21 @@ def cohort_aggregation(adatas: List[ad.AnnData]) -> ad.AnnData:
 
     # Set the array type for annotation use as the highest resolution available
     project_arrays = {
-        name: meta.get('array_type', None) 
+        name: meta.get('platform', None) 
         for name, meta in projects_uns.items()
     }
 
-    highest_array = ARRAY_PRIORITY[-1]
-    for array_type in ARRAY_PRIORITY:
+    highest_array = PLATFORM_PRIORITY[-1]
+    for array_type in PLATFORM_PRIORITY:
         if array_type in project_arrays.values():
             highest_array = array_type
             break
 
-    cohort_adata.uns['array_type'] = highest_array
-    cohort_adata.uns['genome_build'] = adatas[0].uns['genome_build']
+    cohort_adata.uns['platform'] = highest_array
+    cohort_adata.uns['reference_genome'] = adatas[0].uns['reference_genome']
     cohort_adata.uns['projects'] = projects_uns
     cohort_adata.uns['data_type'] = adatas[0].uns['data_type']
+    cohort_adata.uns['conversion'] = adatas[0].uns['conversion']
 
     return cohort_adata
 

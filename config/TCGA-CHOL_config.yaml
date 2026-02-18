@@ -28,7 +28,8 @@
         'experimental_strategy',     # e.g. add mutational/clinical metadata
         'platform',                  #  | to query for here for facilitating
         'reference_genome',          #  | further downstream analysis
-        'cases.samples.portions.analytes.aliquots.aliquot_id'
+        'cases.samples.portions.analytes.aliquots.aliquot_id',
+        'cases.samples.portions.analytes.aliquots.plate'
 
     ]
 

@@ -15,6 +15,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Query link for the GDC API for fetching DNA methylation beta values
 GDC_QUERY_URL = "https://api.gdc.cancer.gov/files"
+GDC_QUERY_BATCH_URL = "https://api.gdc.cancer.gov/cases"
 
 # =====| Downloading Logic |====================================================
 

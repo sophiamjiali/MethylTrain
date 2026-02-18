@@ -130,7 +130,8 @@ def build_metadata(audit_table: pd.DataFrame,
                    config: Dict, 
                    batch_size: int = 20) -> pd.DataFrame:
     """
-    Query GDC for metadata corresponding to successfully downloaded files in the audit table. Nested fields are flattened to a single level.
+    Query GDC for metadata corresponding to successfully downloaded files in 
+    the audit table. Nested fields are flattened to a single level.
 
     Parameters
     ----------

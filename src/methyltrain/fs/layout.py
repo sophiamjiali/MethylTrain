@@ -15,7 +15,7 @@ StrPath = Union[str, Path]
 
 class CohortLayout:
     """
-    Encapsulates the directory strucdture for a DNA methylation dataset 
+    Encapsulates the directory structure for a DNA methylation dataset 
     associated with a multi-project cohort.
 
     This object centralizes project and training directories. Users can provide either:
@@ -108,7 +108,8 @@ class CohortLayout:
             If any of the files do not have extension `.csv`.
         """
 
-        missing_paths: List[Path] = [p for p in self.files if p.parent.exists()]
+        missing_paths: List[Path] = [p for p in self.files if 
+                                     not p.parent.exists()]
         if missing_paths:
             raise FileNotFoundError(f"The following required paths are "
                                     f"not initialized: {missing_paths}")

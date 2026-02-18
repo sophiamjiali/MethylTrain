@@ -3,9 +3,7 @@
 
 "project_id":       "TCGA-KIRP"
 "reference_genome": "GRCh37"    # Default for TCGA 450K era
-
 "seed": 42
-"split": [0.60, 0.20, 0.20]
 
 "download":
 
@@ -40,9 +38,6 @@
     "filter_variance":  True     # Filters low variance or extreme probes
     "convert_to_mval":  True     # Convert beta values to M-values
     "imputation":       True     # Perform imputation, else default to 0
-    "batch_correction": True     # Perform batch correction upon cohort
-    "gene_aggregation": False    # Aggregates cohort beta values to genes
-    "winsorize":        False    # Clip extreme values for ML stability
 
 "quality_control":
     
@@ -64,13 +59,3 @@
         "min_variance": 0.0001
         "min_mean":     0.01
         "max_mean":     0.99
-
-    "batch_correction":
-        "batch_key": "aliquot_id"
-        "covariates": ["project_id"]    # Synonymous with CancerType
-
-    "clip_values": [0.001, 0.999]
-
-
-"gene_aggregation":
-    "regions": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body

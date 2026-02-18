@@ -437,7 +437,7 @@ def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
 
     if config.get('toggles', {}).get('winsorize', True):
-        clip_values = config.get('preprocessing', {}).get('clip_values', [0, 0])
+        clip_values = config.get('clip_values', [0.001, 0.999])
         adata.X = np.clip(np.array(adata.X), clip_values[0], clip_values[1])
 
     adata.uns['state'] = 'processed'
@@ -468,14 +468,14 @@ def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData,
     train_val_idx, test_idx = train_test_split(
         adata.obs_names, 
         test_size = config.get('split', [])[2],
-        stratify = adata.obs['project'],
+        stratify = adata.obs['project_id'],
         random_state = config.get('seed', 42),
         shuffle = True
     )
 
     # Parse train_val_idx to split again
     stratify_array = np.array(
-        adata.obs['project'].reindex(list(train_val_idx)), 
+        adata.obs['project_id'].reindex(list(train_val_idx)), 
         dtype = str
     )
 
@@ -634,5 +634,23 @@ def save_project(adata: ad.AnnData, layout: ProjectLayout) -> None:
 
     layout.validate()
     adata.write_h5ad(layout.project_adata, compression = "gzip")
+
+def save_cohort(adata: ad.AnnData, layout: CohortLayout) -> None:
+    """
+    Saves a project AnnData object.
+
+    The data is not converted to a sparse matrix as beta values will likely see 
+    little performance benefit.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        Project AnnData object containing DNA methylation data and metadata.
+    layout : ProjectLayout
+        Object representing a project dataset directory layout.
+    """
+
+    layout.validate()
+    adata.write_h5ad(layout.cohort_adata, compression = "gzip")
 
 # [END]

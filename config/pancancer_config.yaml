@@ -1,0 +1,17 @@
+"project_id": "pancancer"
+"seed": 42
+"split": [0.60, 0.20, 0.20]
+
+"toggles":
+    "batch_correction": True
+    "gene_aggregation": False
+    "winsorize": False
+
+"batch_correction":
+    "batch_key": "batch_id"
+    "covariates": ["project_id"]    # Synonymous with CancerType
+
+"clip_values": [0.001, 0.999]       # For winsorization
+
+"gene_aggregation":
+    "regions": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body

@@ -202,7 +202,8 @@ def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-6) -> ad.AnnData:
 def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
     Performs ComBat batch correction on an AnnData object using InMoose's 
-    pycombat_norm function. Automatically checks that the input data are M-values (requirement for parametric batch correction).
+    pycombat_norm function. Automatically checks for singleton batches and 
+    collapses to portion- or plate-level if necessary.
 
     Batch correction should be applied after cohort aggregation.
 
@@ -235,13 +236,13 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
                          "or remove missing values first.")
     
     # Ensure data type is M-values, not beta values
-    if adata.uns['data_type'] != "m_value":
+    if adata.uns['conversion'] != "m_value":
         raise ValueError("Batch correction should be performed on M-values. "
                          "Please convert from beta values to M-values first.")
     
     # Ensure batch and covariate columns exist
-    batch_cfg = config.get('preprocessing', {}).get('batch_correction', {})
-    batch_key = batch_cfg.get('batch_key', 'aliquot_id')
+    batch_cfg = config.get('batch_correction', {})
+    batch_key = batch_cfg.get('batch_key', 'batch_id')
     covariates = batch_cfg.get('covariates', ['project_id'])
 
     for col in [batch_key] + covariates:
@@ -250,11 +251,28 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
                              "for batch correction.")
         
     # Prepare the batch vector and covariate matrix
-    batch = adata.obs[batch_key].astype(str).values
-    mod = adata.obs[covariates]
+    batch = adata.obs[batch_key].astype(str).copy()
+    mod = adata.obs[covariates].copy()
+
+    # Detect singleton batches
+    batch_counts = batch.value_counts()
+    singletons = batch_counts[batch_counts == 1].index.tolist()
+
+    if singletons:
+
+        # Use the portion as the batch key
+        batch_simple = batch.str.split('-').str[0]
+        batch_counts_simple = batch_simple.value_counts()
+        singletons_simple = batch_counts_simple[batch_counts_simple == 1].index.tolist()
+
+        # Use plate-level as a backup if collapsing to portion fails
+        if singletons_simple:
+            batch_simple = batch.str.split('-').str[:2].str.join('-')
+        
+        batch = batch_simple
 
     # Apply ComBat via the InMoose package
-    adata.X = pycombat_norm(counts = X.T, batch = batch, covar_mod = mod).T
+    adata.X = pycombat_norm(counts = X.T, batch = batch.values, covar_mod = mod).T
 
     adata.uns['preprocessing_steps'].append("batch_correction")
 

@@ -1,8 +1,8 @@
 # Path to the gdc-client executable
 "gdc_client": "/ddn_exa/campbell/sli/methyltrain/gdc-client"
 
-"project_id":       "TCGA-CESC"
-"reference_genome": "GRCh37"    # Default for TCGA 450K era
+"project_id":       "CPTAC-3"
+"reference_genome": "GRCh38"
 
 "seed": 42
 "split": [0.60, 0.20, 0.20]
@@ -13,7 +13,7 @@
     "data_category":         "DNA Methylation"
     "experimental_strategy": "Methylation Array"
     "data_type":             "Methylation Beta Value"
-    "platform":              "Illumina Human Methylation 450" 
+    "platform":              "Illumina Methylation Epic"
     "sample_type":           "Primary Tumor"
 
     # Fields to request from the metadata query
@@ -23,6 +23,7 @@
         'cases.project.project_id',
         'cases.submitter_id',
         'cases.samples.sample_type',
+        'cases.samples.tissue_type',
         'data_category',
         'data_type',
         'experimental_strategy',     # e.g. add mutational/clinical metadata

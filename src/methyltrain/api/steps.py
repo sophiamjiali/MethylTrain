@@ -88,16 +88,18 @@ def download(config: Dict,
 
     layout.validate()
 
+    if verbose: print("=====| Beginning Project Data Download |=====")
+
     # Build a manifest of available files and attempt to download them
-    manifest = build_manifest(config)
+    manifest = build_manifest(config, verbose)
     status_log = download_methylation(manifest, config, layout, verbose)
 
     # Build an audit table to hold file status flags to query for metadata
     audit_table = initialize_audit_table(manifest, status_log)
-    metadata = build_metadata(audit_table, config)
+    metadata = build_metadata(audit_table, config, verbose)
 
     # Fetch the biospecimen data separately (full TCGA barcode)
-    biospecimen = build_biospecimen(metadata, config)
+    biospecimen = build_biospecimen(metadata, config, verbose)
     metadata = metadata.merge(biospecimen[['aliquot_id', 'barcode']], 
                               on = 'aliquot_id', how = 'left')
     metadata['batch_id'] = metadata['barcode'].apply(extract_batch_id)
@@ -113,6 +115,8 @@ def download(config: Dict,
     save_status_log(status_log, layout)
     save_metadata(metadata, layout)
     save_audit_table(audit_table, layout)
+
+    if verbose: print("=====| Finished Project Data Download |=====")
 
     return audit_table
 

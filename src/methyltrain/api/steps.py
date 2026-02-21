@@ -19,6 +19,7 @@ from pathlib import Path
 
 from ..pipeline.download import (
     build_manifest, 
+    build_biospecimen,
     build_metadata,
     download_methylation
 )
@@ -43,7 +44,7 @@ from ..utils.load_utils import (
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
-from ..utils.utils import load_sample, load_annotation
+from ..utils.utils import load_sample, load_annotation, extract_batch_id
 
 from ..fs.layout import ProjectLayout, CohortLayout
 
@@ -54,7 +55,9 @@ def download(config: Dict,
              layout: ProjectLayout,
              verbose = False) -> pd.DataFrame:
     """
-    Downloads DNA methylation data as beta values from the TCGA GDC based on the project specified in the configurations object. An audit table is built to standardize all attempted files, download status, and metadata status.
+    Downloads DNA methylation data as beta values from the TCGA GDC based on the 
+    project specified in the configurations object. An audit table is built to 
+    standardize all attempted files, download status, and metadata status.
 
     The manifest is created using a GDC API query and resolved at the sample 
     level. Metadata fetching is attempted only for files successfully downloaded.
@@ -93,6 +96,12 @@ def download(config: Dict,
     audit_table = initialize_audit_table(manifest, status_log)
     metadata = build_metadata(audit_table, config)
 
+    # Fetch the biospecimen data separately (full TCGA barcode)
+    biospecimen = build_biospecimen(metadata, config)
+    metadata = metadata.merge(biospecimen[['aliquot_id', 'barcode']], 
+                              on = 'aliquot_id', how = 'left')
+    metadata['batch_id'] = metadata['barcode'].apply(extract_batch_id)
+    
     # Update the audit table with the metadata
     audit_table = update_metadata(audit_table, metadata)
 
@@ -176,7 +185,9 @@ def quality_control(adata: ad.AnnData,
     CpG matrix AnnData object with updated metadata suitable for downstream 
     preprocessing and analysis, and the updated audit table with QC status.
 
-    Note that quality control is intended to be performed upon raw project data (as loaded by `load_raw_project()`) and followed by preprocessing (as per `preprocess()`).
+    Note that quality control is intended to be performed upon raw project data 
+    (as loaded by `load_raw_project()`) and followed by preprocessing (as per 
+    `preprocess()`).
 
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:

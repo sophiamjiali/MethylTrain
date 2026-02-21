@@ -268,7 +268,15 @@ def extract_aliquot_id(cases):
         return (field if cases else pd.NA)
     except Exception:
         return pd.NA
-        
+
+def extract_batch_id(barcode: str):
+    # Returns the portion and the plate ID together
+    
+    if pd.isna(barcode): return None
+    parts = barcode.split('-')
+    if len(parts) >= 6:
+        return f"{parts[3]}-{parts[5]}"  # portion + plate
+    return None
 
 # ======| Computation Utilities |===============================================
 

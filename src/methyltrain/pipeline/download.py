@@ -18,7 +18,7 @@ import pandas as pd
 from typing import Dict, List
 
 from ..fs.layout import ProjectLayout
-from ..constants import GDC_QUERY_URL, MAX_RETRIES
+from ..constants import GDC_QUERY_URL, MAX_RETRIES, GDC_QUERY_BATCH_URL
 from ..utils.utils import (
     verify_gdc_client,
     extract_project_id,
@@ -210,6 +210,70 @@ def build_metadata(audit_table: pd.DataFrame,
 
     return metadata
 
+
+def build_biospecimen(metadata: pd.DataFrame,
+                      config: Dict, 
+                      batch_size: int = 20) -> pd.DataFrame:
+    """
+    Queries for sample biospecimen metadata used for batch correction
+    """
+
+    # Fetch the case IDs of all samples successfully downloaded
+    case_ids = metadata['submitter_id'].unique().tolist()
+    all_hits = []
+
+    # Query the GDC client for the biospecimen data
+    for i in range(0, len(case_ids), batch_size):
+        batch = case_ids[i:i + batch_size]
+
+        filters = {
+            "op": "in",
+            "content": {"field": "submitter_id", "value": batch}
+        }
+    
+        params = {
+            "filters": json.dumps(filters),
+            "expand": "samples.portions.analytes.aliquots",
+            "fields": ",".join(['submitter_id', 'samples.portions.submitter_id',
+                                'samples.portions.analytes.aliquots.aliquot_id',
+                                'samples.portions.analytes.aliquots.submitter_id']),
+            "format": "JSON",
+            "size": len(batch)
+        }
+
+        # Query the `cases` endpoint
+        response = requests.get(GDC_QUERY_BATCH_URL, params = params)
+        response.raise_for_status()
+        hits = response.json()['data']['hits']
+
+        # Extract the nested barcode values
+        for case in hits:
+            case_id = case['submitter_id']
+            for sample in case.get('samples', []):
+                for portion in sample.get('portions', []):
+                    portion_barcode = portion.get('submitter_id')
+                    for analyte in portion.get('analytes', []):
+                        for aliquot in analyte.get('aliquots', []):
+
+                            # Use the aliquot-level barcode if available, else portion-level
+                            aliquot_barcode = aliquot.get('submitter_id', portion_barcode)
+                            all_hits.append({
+                                "case_id": case_id,
+                                "aliquot_id": aliquot.get('aliquot_id'),
+                                "barcode": aliquot_barcode
+                            })
+
+    # Keep only rows corresponding to aliquots in adata
+    biospecimen = pd.DataFrame(all_hits)
+    biospecimen = biospecimen[biospecimen['aliquot_id'].isin(metadata['aliquot_id'])]
+
+    # Drop exact duplicates
+    biospecimen = biospecimen.drop_duplicates(subset = 'aliquot_id')
+    biospecimen['aliquot_id'] = biospecimen['aliquot_id'].astype(str)
+    
+    return biospecimen
+
+
 # =====| Download Methylation |=================================================
 
 def download_methylation(manifest: pd.DataFrame, 
@@ -219,7 +283,8 @@ def download_methylation(manifest: pd.DataFrame,
     """
     Downloads DNA methylation files from the GDC using a prevalidated manifest. 
     Includes additional safety and reproducibility checks, ensuring the GDC 
-    Data Transfer Tool (`gdc-client`) is installed and available. Uses batch manifest-based downloading with resume support. Asserts file 
+    Data Transfer Tool (`gdc-client`) is installed and available. Uses batch 
+    manifest-based downloading with resume support. Asserts file 
     existence after download and logs per-file status.
 
     Logs per-file download status and timestamp. Failures in download will 

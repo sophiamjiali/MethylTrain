@@ -28,12 +28,12 @@ MAX_RETRIES = 5
 PLATFORM_TYPES = [
     "Illumina Human Methylation 27",
     "Illumina Human Methylation 450",
-    "Illumina Human Methylation Epic" # later add v2
+    "Illumina Methylation Epic" # later add v2
 ]
 
 # Defines resolution hierarchy
 PLATFORM_PRIORITY = [
-    "Illumina Human Methylation Epic",
+    "Illumina Methylation Epic",
     "Illumina Human Methylation 450",
     "Illumina Human Methylation 27"
 ]
@@ -50,7 +50,7 @@ ANNOTATION_hg19_PATHS = {
 
     "Illumina Human Methylation 450": ANNOTATION_DIR / "illumina450k_annotation_hg19.parquet",
 
-    "Illumina Human Methylation Epic": ANNOTATION_DIR / "illuminaEPIC_annotation_hg19.parquet"
+    "Illumina Methylation Epic": ANNOTATION_DIR / "illuminaEPIC_annotation_hg19.parquet"
 }
 
 ANNOTATION_hg38_PATHS = {
@@ -58,5 +58,5 @@ ANNOTATION_hg38_PATHS = {
 
     "Illumina Human Methylation 450": ANNOTATION_DIR / "illumina450k_annotation_hg38.parquet",
 
-    "Illumina Human Methylation Epic": ANNOTATION_DIR / "illuminaEPIC_annotation_hg38.parquet"
+    "Illumina Methylation Epic": ANNOTATION_DIR / "illuminaEPIC_annotation_hg38.parquet"
 }

@@ -38,9 +38,9 @@
     "probe_qc":         True
     "normalize":        True     # Perform beta-scale normalization
     "filter_variance":  True     # Filters low variance or extreme probes
-    "convert_to_mval":  True     # Convert beta values to M-values
+    "convert_to_mval":  False    # Convert beta values to M-values
     "imputation":       True     # Perform imputation, else default to 0
-    "batch_correction": True     # Perform batch correction upon cohort
+    "batch_correction": False    # Perform batch correction upon cohort
     "gene_aggregation": False    # Aggregates cohort beta values to genes
     "winsorize":        False    # Clip extreme values for ML stability
 
@@ -66,7 +66,7 @@
         "max_mean":     0.99
 
     "batch_correction":
-        "batch_key": "aliquot_id"
+        "batch_key": "batch_id"
         "covariates": ["project_id"]    # Synonymous with CancerType
 
     "clip_values": [0.001, 0.999]

@@ -182,7 +182,8 @@ def clean_data(audit_table: pd.DataFrame,
 def quality_control(adata: ad.AnnData, 
                     audit_table: pd.DataFrame,
                     config: Dict, 
-                    layout: ProjectLayout) -> Tuple[ad.AnnData, pd.DataFrame]:
+                    layout: ProjectLayout,
+                    verbose: bool = False) -> Tuple[ad.AnnData, pd.DataFrame]:
     """
     Performes probe and/or sample quality control upon DNA methylation values 
     presented as a CpG matrix AnnData object. Returns the quality-controlled 
@@ -233,11 +234,16 @@ def quality_control(adata: ad.AnnData,
 
     """
 
+    if verbose: print("=====| Beginning Quality Control |=====")
+
     # Load the appropriate annotation provided by the package, else raises error
     annotation = load_annotation(
         platform = adata.uns['platform'], 
         reference_genome = adata.uns['reference_genome']
     )
+
+    if verbose: print(f"Loaded annotation for platform {adata.uns['platform']}"
+                      f" and reference genome {adata.uns['reference_genome']}")
 
     # Perform each quality-control step if toggled by the user-configurations
     toggles = config.get('toggles', {})
@@ -253,18 +259,23 @@ def quality_control(adata: ad.AnnData,
         # Update the audit table for files present in the adata (not prev. fail)
         audit_table.loc[audit_table.index.isin(fail_qc), 'qc_pass'] = 0
         audit_table.loc[audit_table.index.isin(after_qc), 'qc_pass'] = 1
+
+        if verbose: print("Successfully performed sample QC")
     
     if toggles.get('probe_qc', True):
         adata = probe_qc(adata, annotation, config)
+        if verbose: print("Successfully performed probe QC")
 
     # Clean the metadata and manifest; if no QC performed, same as raw
     clean_metadata(adata, layout)
     adata.uns['state'] = 'processed'
 
+    if verbose: print("=====| Finished Quality Control |=====")
+
     return (adata, audit_table)
 
 
-def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+def preprocess(adata: ad.AnnData, config: Dict, verbose: bool = False) -> ad.AnnData:
     """
     Preprocess DNA methylation beta values of a project to a gene-level matrix. 
     Returns a samples x genes AnnData object with aligned metadata suitable for 
@@ -296,20 +307,28 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         data at the CpG probe matrix level with updated metadata.
     """
 
+    if verbose: print("=====| Beginning Preprocessing |=====")
+
     # Perform each preprocessing step if toggled by the user-configurations
     if config.get('toggles', {}).get('normalize', True):
         adata = normalize(adata)
+        if verbose: print("Successfully normalized the data")
 
     if config.get('toggles', {}).get('filter_variance', True):
         adata = filter_variance(adata, config)
+        if verbose: print("Successfully filtered by variance")
 
     if config.get('toggles', {}).get('impute', True):
         adata = impute(adata)
+        if verbose: print("Successfully imputed missing data")
 
     if config.get('toggles', {}).get('convert_to_mval', True):
         adata = convert_to_mval(adata)
+        if verbose: print("Successfully converted data to M-values")
 
     adata.uns['state'] = 'processed'
+
+    if verbose: print("=====| Finished Preprocessing |=====")
 
     return adata
 
@@ -650,6 +669,7 @@ def save_project(adata: ad.AnnData, layout: ProjectLayout) -> None:
     layout.validate()
     adata.write_h5ad(layout.project_adata, compression = "gzip")
 
+    
 def save_cohort(adata: ad.AnnData, layout: CohortLayout) -> None:
     """
     Saves a project AnnData object.

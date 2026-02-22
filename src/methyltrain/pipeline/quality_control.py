@@ -16,7 +16,10 @@ from ..utils.utils import iqr_bounds
 
 def sample_qc(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
-    Performs sample-level quality control upon DNA methylation values presented as a CpG matrix AnnData object. Returns the quality-controlled CpG matrix AnnData object with updated metadata suitable for further probe-level quality control and/or preprocessing.
+    Performs sample-level quality control upon DNA methylation values presented 
+    as a CpG matrix AnnData object. Returns the quality-controlled CpG matrix 
+    AnnData object with updated metadata suitable for further probe-level 
+    quality control and/or preprocessing.
 
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:
@@ -109,6 +112,12 @@ def probe_qc(adata: ad.AnnData,
     probe_cfg = config.get('quality_control', {}).get('probe_qc', {})
     missing_threshold = probe_cfg.get('missing_threshold', 0.05)
 
+    # Remove probes that don't exist in the annotation (alignment)
+    annotation = annotation.set_index('probe_id')
+    common_probes = adata.var_names.intersection(annotation.index)
+    adata._inplace_subset_var(adata.var_names.isin(common_probes))
+    annotation = annotation.loc[common_probes]
+
     # Remove non-standard probes from the CpG matrix and annotation
     keep_standard = adata.var_names.str.startswith('cg')
     adata._inplace_subset_var(keep_standard)
@@ -118,7 +127,6 @@ def probe_qc(adata: ad.AnnData,
     keep_missing = missing_rate <= missing_threshold
 
     # Filter by annotation flags provided in the annotation object
-    annotation = annotation.set_index('probe_id').reindex(adata.var_names)
     keep_annotation = pd.Series(True, index = annotation.index)
 
     if probe_cfg.get('remove_sex_chromosome', True):
@@ -142,3 +150,5 @@ def probe_qc(adata: ad.AnnData,
     adata._inplace_subset_var(pass_qc)
 
     return adata
+
+# [END]

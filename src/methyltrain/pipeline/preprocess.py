@@ -165,7 +165,7 @@ def impute(adata: ad.AnnData):
     return adata
 
 
-def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-6) -> ad.AnnData:
+def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-3) -> ad.AnnData:
     """
     Converts beta values in a CpG matrix AnnData object to M-values using the 
     logit-transformation: M = log2(beta / (1 - beta)). This transformation 

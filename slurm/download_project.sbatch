@@ -1,9 +1,12 @@
 #!/bin/bash
+#SBATCH --job-name=evaluate
 #SBATCH --output=/ddn_exa/campbell/sli/methyltrain/logs/%x_%j.out
 #SBATCH --error=/ddn_exa/campbell/sli/methyltrain/logs/%x_%j.err
 #SBATCH --time=12:00:00
+
 #SBATCH --partition=gpu
-#SBATCH --nodelist=gpu3
+#SBATCH --cpus-per-task=2
+#SBATCH --gres=gpu:0
 
 set -euo pipefail
 

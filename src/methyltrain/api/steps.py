@@ -100,8 +100,11 @@ def download(config: Dict,
 
     # Fetch the biospecimen data separately (full TCGA barcode)
     biospecimen = build_biospecimen(metadata, config, verbose)
+
+    metadata = metadata.reset_index()
     metadata = metadata.merge(biospecimen[['aliquot_id', 'barcode']], 
                               on = 'aliquot_id', how = 'left')
+    metadata = metadata.set_index('file_id', drop = True)
     metadata['batch_id'] = metadata['barcode'].apply(extract_batch_id)
     
     # Update the audit table with the metadata
@@ -488,7 +491,8 @@ def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData,
     Parameters
     ----------
     adata : ad.AnnData
-        AnnData object representing a project's quality-controlled, preprocessed, and batch effect corrected DNA methylation data at the gene matrix level.
+        AnnData object representing a project's quality-controlled, preprocessed, 
+        and batch effect corrected DNA methylation data at the gene matrix level.
     config : dict
         Configuration dictionary controlling workflow steps.
 
@@ -498,9 +502,17 @@ def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData,
         The train, validation, and test stratified splits as ad.AnnData objects.
     """
 
+    # Ensure obs_names are unique
+    if not adata.obs_names.is_unique:
+        adata.obs_names = adata.obs['file_id']
+        adata.obs_names_make_unique()
+
+    # Convert obs_names to integer positions for splitting
+    all_idx = np.arange(adata.n_obs)
+
     # Split into train+validation and test
     train_val_idx, test_idx = train_test_split(
-        adata.obs_names, 
+        all_idx,
         test_size = config.get('split', [])[2],
         stratify = adata.obs['project_id'],
         random_state = config.get('seed', 42),
@@ -508,10 +520,7 @@ def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData,
     )
 
     # Parse train_val_idx to split again
-    stratify_array = np.array(
-        adata.obs['project_id'].reindex(list(train_val_idx)), 
-        dtype = str
-    )
+    stratify_array = adata.obs['project_id'].to_numpy()[train_val_idx]
 
     # Split into train and validation
     train_idx, val_idx = train_test_split(

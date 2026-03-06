@@ -121,10 +121,14 @@ def probe_qc(adata: ad.AnnData,
     # Remove non-standard probes from the CpG matrix and annotation
     keep_standard = adata.var_names.str.startswith('cg')
     adata._inplace_subset_var(keep_standard)
+    annotation = annotation.loc[adata.var_names]
 
     # Filter by missingness
     missing_rate = np.isnan(np.asarray(adata.X)).mean(axis = 0)
-    keep_missing = missing_rate <= missing_threshold
+    keep_missing = pd.Series(
+        missing_rate <= missing_threshold,
+        index = adata.var_names
+    )
 
     # Filter by annotation flags provided in the annotation object
     keep_annotation = pd.Series(True, index = annotation.index)

@@ -5,3 +5,10 @@ Next Steps
 - analysis layer: CpGtools / DMseg / other quick analyses tools
 - output some quick and basic visualizations
 - basic GUI?
+
+
+To Download a Project:
+
+```
+sbatch slurm/download_project.sbatch <TCGA-...>
+```

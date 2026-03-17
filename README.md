@@ -12,3 +12,10 @@ To Download a Project:
 ```
 sbatch slurm/download_project.sbatch <TCGA-...>
 ```
+
+Current training projects:
+- TCGA-BLCA
+- TCGA-BRCA
+- TCGA-GBM
+- TCGA-HNSC
+- TCGA-KIRC

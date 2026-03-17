@@ -2,7 +2,7 @@
 "gdc_client": "/ddn_exa/campbell/sli/methyltrain/gdc-client"
 
 "project_id":       "TCGA-GBM"
-"reference_genome": "GRCh37"    # Default for TCGA 450K era
+"reference_genome": "GRCh38"    # Default for TCGA 450K era
 "seed": 42
 
 "download":

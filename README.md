@@ -16,7 +16,7 @@ sbatch slurm/prepare_project.sh <TCGA-...>
 To Prepare a Cohort:
 
 ```
-sbatch slurm/prepare_config.sh <cohort>
+sbatch slurm/prepare_cohort.sh <cohort>
 ```
 
 Current training projects:

@@ -14,7 +14,7 @@ set -euo pipefail
 COHORT_ID="$1"
 
 if [[ -z "${COHORT_ID}" ]]; then
-    echo "Usage: sbatch prepare_cohort.sh <COHORT_ID>"
+    echo "Usage: sbatch slurm/prepare_cohort.sh <COHORT_ID>"
     exit 1
 fi
 

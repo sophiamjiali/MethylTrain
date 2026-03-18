@@ -2,6 +2,16 @@
 "seed": 42
 "split": [0.60, 0.20, 0.20]
 
+
+"project_dir": "../data/processed/"
+"projects": [
+    "TCGA-BLCA",
+    "TCGA-BRCA",
+    "TCGA-GBM",
+    "TCGA-HNSC",
+    "TCGA-KIRC"
+]
+
 "toggles":
     "batch_correction": True
     "gene_aggregation": False

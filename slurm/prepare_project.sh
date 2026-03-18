@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=evaluate
-#SBATCH --output=/ddn_exa/campbell/sli/methyltrain/logs/%x_%j.out
-#SBATCH --error=/ddn_exa/campbell/sli/methyltrain/logs/%x_%j.err
+#SBATCH --job-name=project
+#SBATCH --output=/ddn_exa/campbell/sli/methyltrain/logs/projects/%x_%j.out
+#SBATCH --error=/ddn_exa/campbell/sli/methyltrain/logs/projects/%x_%j.err
 #SBATCH --time=12:00:00
 
 #SBATCH --partition=gpu
@@ -14,7 +14,7 @@ set -euo pipefail
 PROJECT_ID="$1"
 
 if [[ -z "${PROJECT_ID}" ]]; then
-    echo "Usage: sbatch download_project.sbatch <PROJECT_ID>"
+    echo "Usage: sbatch prepare_project.sh <PROJECT_ID>"
     exit 1
 fi
 
@@ -26,7 +26,7 @@ conda activate methyltrain-env
 cd /ddn_exa/campbell/sli/methyltrain
 
 # Run the sweep
-srun python -u slurm/download_project.py \
+srun python -u scripts/prepare_project.py \
     --config "/ddn_exa/campbell/sli/methyltrain/config/${PROJECT_ID}_config.yaml" \
     --verbose \
     --clean-raw-data

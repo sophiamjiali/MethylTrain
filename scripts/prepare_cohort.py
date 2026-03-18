@@ -51,10 +51,10 @@ def main():
         cohort_name = cohort,
         root_dir = "./data",
         project_list = project_list,
-        cohort_adata = f"../data/training/methylation/{cohort}_cohort_adata.h5ad",
-        train_adata = f"../data/training/methylation/{cohort}_train_adata.h5ad",
-        val_adata = f"../data/training/methylation/{cohort}_val_adata.h5ad",
-        test_adata = f"../data/training/methylation/{cohort}_test_adata.h5ad"
+        cohort_adata = f"../data/training/{cohort}_cohort_adata.h5ad",
+        train_adata = f"../data/training/{cohort}_train_adata.h5ad",
+        val_adata = f"../data/training/{cohort}_val_adata.h5ad",
+        test_adata = f"../data/training/{cohort}_test_adata.h5ad"
     )
     layout.initialize()
     layout.validate()

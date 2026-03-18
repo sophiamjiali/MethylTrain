@@ -14,7 +14,7 @@ set -euo pipefail
 PROJECT_ID="$1"
 
 if [[ -z "${PROJECT_ID}" ]]; then
-    echo "Usage: sbatch prepare_project.sh <PROJECT_ID>"
+    echo "Usage: sbatch slurm/prepare_project.sh <PROJECT_ID>"
     exit 1
 fi
 

@@ -44,7 +44,7 @@ def main():
     for project in all_projects:
         project_list.append(os.path.join(project_dir, f"{project}_adata.h5ad"))
     
-    if verbose: print("Cohort contains projects: ", ", ".join(all_projects))
+    if args.verbose: print("Cohort contains projects: ", ", ".join(all_projects))
 
     # Initialize the default cohort layout
     layout = CohortLayout(

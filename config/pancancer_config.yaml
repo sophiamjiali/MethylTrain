@@ -3,7 +3,7 @@
 "split": [0.60, 0.20, 0.20]
 
 
-"project_dir": "./data/processed/methylation"
+"project_dir": "./data/processed/"
 "projects": [
     "TCGA-BLCA",
     "TCGA-BRCA",

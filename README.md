@@ -7,10 +7,16 @@ Next Steps
 - basic GUI?
 
 
-To Download a Project:
+To Prepare a Project:
 
 ```
-sbatch slurm/download_project.sbatch <TCGA-...>
+sbatch slurm/prepare_project.sh <TCGA-...>
+```
+
+To Prepare a Cohort:
+
+```
+sbatch slurm/prepare_config.sh <cohort>
 ```
 
 Current training projects:

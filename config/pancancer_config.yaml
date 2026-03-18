@@ -3,7 +3,7 @@
 "split": [0.60, 0.20, 0.20]
 
 
-"project_dir": "./data/processed/"
+"project_dir": "/ddn_exa/campbell/sli/methyltrain/data/processed/"
 "projects": [
     "TCGA-BLCA",
     "TCGA-BRCA",

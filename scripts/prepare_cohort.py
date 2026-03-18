@@ -10,6 +10,8 @@
 import argparse
 import os
 
+import anndata as ad
+
 from methyltrain.config.loader import load_config
 from methyltrain.fs.layout import CohortLayout
 from methyltrain.api.steps import (

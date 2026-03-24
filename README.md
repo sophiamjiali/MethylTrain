@@ -2,7 +2,7 @@
 
 A Python package for high-throughput downloading and data engineering of DNA methylation data from the [NCI Genomic Data Commons (GDC)](https://portal.gdc.cancer.gov/) for machine learning workflows.
 
-MethylTrain handles the full data preparation pipeline — from raw TCGA methylation array downloads through preprocessing and cohort assembly — producing clean, ML-ready datasets (AnnData format) for use in downstream modelling.
+MethylTrain handles the full data preparation pipeline of raw TCGA methylation array downloads through preprocessing and cohort assembly, producing clean, ML-ready datasets (AnnData format) for use in downstream modelling.
 
 ---
 

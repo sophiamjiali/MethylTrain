@@ -13,15 +13,20 @@
 ]
 
 "toggles":
-    "batch_correction": True
+    "MAD_probe_fltering": True
+    "batch_correction": False
     "gene_aggregation": False
-    "winsorize": False
+    "winsorize": True
+    "scale": True
+
+"MAD_probe_filtering":
+    "top_n": 30000
 
 "batch_correction":
     "batch_key": "batch_id"
     "covariates": ["project_id"]    # Synonymous with CancerType
 
-"clip_values": [0.001, 0.999]       # For winsorization
+"clip_values": [0.01, 0.99]       # For winsorization
 
 "gene_aggregation":
     "regions": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body

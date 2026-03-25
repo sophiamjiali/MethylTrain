@@ -1,7 +1,7 @@
 # Path to the gdc-client executable
 "gdc_client": "/ddn_exa/campbell/sli/methyltrain/gdc-client"
 
-"project_id":       "TCGA-BLCA"
+"project_id":       "TCGA-LUAD"
 "reference_genome": "GRCh38"    # Default for TCGA 450K era
 "seed": 42
 

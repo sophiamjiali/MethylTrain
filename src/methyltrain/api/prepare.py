@@ -104,6 +104,10 @@ def prepare_cohort(config: Dict,
     # Aggregate the projects into a cohort AnnData object
     cohort_adata = aggregate_cohort(project_adatas, layout)
 
+    # Perform MAD probe filtering to reduce probe dimensionality
+    if config.get('toggles', {}).get('MAD_probe_filtering', True):
+        cohort_adata = filter_by_mad(cohort_adata, config)
+
     # Perform batch effect correction across datasets if toggled
     if config.get('toggles', {}).get('batch_correction', True):
         cohort_adata = cohort_batch_correction(cohort_adata, config)
@@ -112,14 +116,17 @@ def prepare_cohort(config: Dict,
     if config.get('toggles', {}).get('gene_aggregation', True):
         cohort_adata = aggregate_genes(cohort_adata, config)
 
-    # Winsorize values of 0 or 1 to promote downstream ML stability
-    if config.get('toggles', {}).get('winsorization', True):
-        cohort_adata = winsorize(cohort_adata, config)
+    # Winsorize and scale M-values to [-1, 1] promote downstream ML stability
+    if config.get('toggles', {}).get('clip_and_scale', True):
+        cohort_adata = clip_and_scale(cohort_adata, config)
+
+    # Split the cohort AnnData object into train-val-test splits
+    if config.get('toggles', {}).get('split', True):
+        train_adata, val_adata, test_adata = split(cohort_adata, config)
+    else:
+        train_adata, val_adata, test_adata = None, None, None
 
     # Save the processed cohort adata prior to splitting
     save_cohort(cohort_adata, layout)
-
-    # Split the cohort AnnData object into train-val-test splits
-    train_adata, val_adata, test_adata = split(cohort_adata, config)
 
     return train_adata, val_adata, test_adata

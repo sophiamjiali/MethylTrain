@@ -199,6 +199,49 @@ def convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-3) -> ad.AnnData:
     return adata
 
 
+def mad_probe_filter(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+    """
+    Filter features (probes) by top-N Median Absolute Deviation (MAD).
+
+    Parameters
+    ----------
+    adata : AnnData
+        Input AnnData object (cells x features).
+    config : Dict
+        Configuration dict. Uses:
+        config.get('MAD_probe_filtering', {}).get('top_n', 30000)
+
+    Returns
+    -------
+    AnnData
+        Subset AnnData with top-N MAD features.
+    """
+
+    top_n = config.get('MAD_probe_filtering', {}).get('top_n', 30000)
+
+    # Vectorize MAD calculations
+    X = adata.X if isinstance(adata.X, np.ndarray) else adata.X.toarray()
+    col_medians = np.medians(X, axis = 0)
+    mad = np.median(np.abs(X - col_medians), axis = 0)
+
+    # Filter out dead probes (zero variance)
+    valid_mask = mad > 0
+    valid_indices = np.where(valid_mask)[0]
+    valid_mad = mad[valid_mask]
+
+    # Take the top N or all valid probes
+    n_to_keep = min(top_n, len(valid_indices))
+    top_indices_within_valid = np.argsort(valid_map)[-n_to_keep:]
+    final_indices = valid_indices[top_indices_within_valid]
+
+    # Slice and return the AnnData object
+    adata = adata[:, final_indices]
+    adata.var['mad_score'] = mad[final_indices]
+    adata.uns['preprocessing_steps'].append('MAD_probe_filtering')
+
+    return adata
+
+
 def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
     Performs ComBat batch correction on an AnnData object using InMoose's 

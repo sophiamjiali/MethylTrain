@@ -28,7 +28,8 @@ from ..pipeline.preprocess import (
     filter_variance,
     convert_to_mval,
     impute, 
-    batch_correction
+    batch_correction,
+    mad_probe_filter
 )
 from ..pipeline.audit import (
     initialize_audit_table,
@@ -49,7 +50,7 @@ from ..utils.utils import load_sample, load_annotation, extract_batch_id
 from ..fs.layout import ProjectLayout, CohortLayout
 
 
-# =====| Workflow |=============================================================
+# =====| Project Workflow |====================================================
 
 def download(config: Dict, 
              layout: ProjectLayout,
@@ -335,6 +336,7 @@ def preprocess(adata: ad.AnnData, config: Dict, verbose: bool = False) -> ad.Ann
 
     return adata
 
+# =====| Cohort Workflow |=====================================================
 
 def aggregate_cohort(adatas: List[ad.AnnData],
                      layout: CohortLayout) -> ad.AnnData:
@@ -352,7 +354,8 @@ def aggregate_cohort(adatas: List[ad.AnnData],
     layout : CohortLayout
         Layout object detailing a cohort.
     adatas : List of ad.AnnData
-        List of project AnnData objects at the CpG probe x sample level, each representing a single project. Each object must have:
+        List of project AnnData objects at the CpG probe x sample level, each 
+        representing a single project. Each object must have:
         - .uns['project_id'] : unique project name
         - .uns['level'] : 'project' or 'cohort'
         - .uns['data_type'] : 'cpg_matrix' or 'gene_matrix'
@@ -384,10 +387,35 @@ def aggregate_cohort(adatas: List[ad.AnnData],
 
     return cohort_adata
 
+def filter_by_mad(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+    """
+    Filter features (probes) by top-N Median Absolute Deviation (MAD).
+
+    Parameters
+    ----------
+    adata : AnnData
+        Input AnnData object (cells x features).
+    config : Dict
+        Configuration dict. Uses:
+        config.get('MAD_probe_filtering', {}).get('top_n', 30000)
+
+    Returns
+    -------
+    AnnData
+        Subset AnnData with top-N MAD features.
+    """
+    adata = mad_probe_filter(adata, config)
+    adata.uns['state'] = 'processed'
+
+    return adata
+
+
 
 def cohort_batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
-    Performs ComBat batch correction across multiple projects aggregated into a CpG matrix cohort. Automatically checks that the input data is M-values (requirement for parametric batch correction). 
+    Performs ComBat batch correction across multiple projects aggregated into a 
+    CpG matrix cohort. Automatically checks that the input data is M-values 
+    (requirement for parametric batch correction). 
 
     Parameters
     ----------
@@ -410,9 +438,7 @@ def cohort_batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         and covariate columns don't exist.
     """
     
-    if config.get('toggles', {}).get('batch_correction', True):
-        adata = batch_correction(adata, config)
-
+    adata = batch_correction(adata, config)
     adata.uns['state'] = 'processed'
 
     return adata
@@ -447,11 +473,12 @@ def aggregate_genes(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     adata.uns['state'] = 'processed'
 
     return adata
+    
 
-
-def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+def clip_and_scale(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
-    Clips data of an AnnData object either at the CpG probe-level or gene-level.
+    Applies global winsorization and Min-Max scaling to map M-values to the 
+    [-1, 1] range optimized for VAE/Diffusion gradients.
 
     Winsorization should only be performed at the data level the machine 
     learning model will encounter (i.e. gene-level), as clipping extreme values 
@@ -470,13 +497,29 @@ def winsorize(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     Returns
     -------
     ad.AnnData
-        The AnnData object with its beta values clipped per user configurations.
+        The AnnData object with its values clipped and scaled.
     """
 
-    if config.get('toggles', {}).get('winsorize', True):
-        clip_values = config.get('clip_values', [0.001, 0.999])
-        adata.X = np.clip(np.array(adata.X), clip_values[0], clip_values[1])
+    clip_values = config.get('clip_and_scale', [0.01, 0.99])
+    X = adata.X if isinstance(adata.X, np.ndarray) else adata.X.toarray()
 
+    # Perform global winsorization across the full matrix
+    lower_val = np.percentile(X, clip_values[0] * 100)
+    upper_val = np.percentile(X, clip_values[1] * 100)
+    X = np.clip(X, lower_val, upper_val)
+
+    # Perform min-max scaling to [-1, 1]
+    range = upper_val - lower_val
+    if range_val == 0: return adata
+    X = 2 * ((X - lower_val) / range_val) - 1
+    
+    adata.X = X.astype(np.float32)
+    adata.uns['scaling_metadata'] = {
+        'lower_bound_mval': lower_val,
+        'upper_bound_mval': upper_val,
+        'target_range': [-1, 1]
+    }
+    adata.uns['preprocessing_steps'].append("clip_and_scale")
     adata.uns['state'] = 'processed'
     
     return adata

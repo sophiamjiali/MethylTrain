@@ -107,7 +107,7 @@ def gene_aggregation(adata: ad.AnnData,
     """
 
     # Fetch the regions to aggregate (TSS200, TS1500, gene body)
-    regions = config.get('gene_aggregation', {}).get('regions', [])
+    regions = config.get('gene_aggregation', [])
 
     # Align annotations to the AnnData probes
     annotation = annotation.set_index("probe_id").loc[adata.var_names]

@@ -1,7 +1,5 @@
 "project_id": "pancancer"
 "seed": 42
-"split": [0.60, 0.20, 0.20]
-
 
 "project_dir": "/ddn_exa/campbell/sli/methyltrain/data/processed/"
 "projects": [
@@ -18,15 +16,16 @@
     "gene_aggregation": False
     "winsorize": True
     "scale": True
+    "split": True
 
-"MAD_probe_filtering":
-    "top_n": 30000
+"MAD_probe_filtering": 30000
 
 "batch_correction":
     "batch_key": "batch_id"
     "covariates": ["project_id"]    # Synonymous with CancerType
 
-"clip_values": [0.01, 0.99]       # For winsorization
+"gene_aggregation": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body
 
-"gene_aggregation":
-    "regions": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body
+"winsorize": [0.01, 0.99]       # For winsorization
+
+"split": [0.60, 0.20, 0.20]

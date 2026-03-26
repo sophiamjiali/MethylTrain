@@ -9,13 +9,13 @@
 import yaml
 from pathlib import Path
 from typing import Any, Dict, Union
-from .defaults import DEFAULT_CONFIG
+from .defaults import DEFAULT_PROJECT_CONFIG, DEFAULT_COHORT_CONFIG
 
 from ..utils.utils import merge_dicts, check_dict
 
 StrPath = Union[str, Path]
 
-def load_config(config_path: StrPath | None = None):
+def load_config(config_path: StrPath | None = None, config_type = "Project"):
     """
     Load a configuration file and merge it with the default configuration.
 
@@ -23,6 +23,8 @@ def load_config(config_path: StrPath | None = None):
     ----------
     config_path : str or Path, optional
         Path to a YAML configuration file. If None, only default config is used.
+    config_type : str
+        Configuration type (cohort or project)
 
     Returns
     -------
@@ -43,7 +45,8 @@ def load_config(config_path: StrPath | None = None):
 
     """
 
-    config = DEFAULT_CONFIG.copy()
+    if config_type == "project": default = DEFAULT_PROJECT_CONFIG.copy()
+    else: default = DEFAULT_COHORT_CONFIG.copy()
 
     # If a configuration path is provided, merge it with default configurations
     if config_path is not None:
@@ -54,15 +57,15 @@ def load_config(config_path: StrPath | None = None):
         
         with path.open('r') as f:
             user_config = yaml.safe_load(f) or {}
-        config = merge_dicts(config, user_config)
+        config = merge_dicts(default, user_config)
 
     # Verify the configurations provided are viable
-    verify_config(config)
+    verify_config(config, default)
 
     return config
 
 
-def verify_config(config: Dict) -> None:
+def verify_config(config: Dict, default: Dict) -> None:
     """
     Verify that the user-provided configuration dictionary is valid. Raises 
     informative errors if any required keys or values are missing or invalid.
@@ -73,6 +76,8 @@ def verify_config(config: Dict) -> None:
     ----------
     config : dict
         Configuration dictionary controlling workflow steps.
+    default : dict
+        Defautl configuration for verification.
 
     Raises
     ------
@@ -83,4 +88,5 @@ def verify_config(config: Dict) -> None:
     ValueError
         If a value in `user` violates a constraint (e.g., allowed enum values).
     """
-    check_dict(DEFAULT_CONFIG, config)
+    # check_dict(default, config)
+    return

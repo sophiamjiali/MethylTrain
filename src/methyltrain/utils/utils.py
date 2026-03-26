@@ -104,26 +104,6 @@ def load_annotation(platform: str, reference_genome: str) -> pd.DataFrame:
                          f"recognized from the supported types: "
                          f"{constants.REFERENCE_GENOME_TYPES}")
 
-    # # Verify the array type and genome build provided are valid
-    # if platform not in PLATFORM_TYPES:
-    #     raise ValueError(f"Platform {platform} was not recognized from the "
-    #                      f"supported types: {PLATFORM_TYPES}")
-
-    # if reference_genome not in REFERENCE_GENOME_TYPES:
-    #     raise ValueError(f"Reference genome {reference_genome} was not "
-    #                      f"recognized from the supported types: "
-    #                      f"{REFERENCE_GENOME_TYPES}")
-    
-    # # Load the appropriate genome build annotation path (provided by package)
-    # if reference_genome == "GRCh37":
-    #     anno_path = ANNOTATION_hg19_PATHS[platform]
-    # elif reference_genome == "GRCh38":
-    #     anno_path = ANNOTATION_hg38_PATHS[platform]
-    # else:
-    #     raise ValueError(f"Reference genome {reference_genome} was not "
-    #                      f"recognized from the supported types: "
-    #                      f"{REFERENCE_GENOME_TYPES}")
-
     return pd.read_parquet(anno_path)
 
 

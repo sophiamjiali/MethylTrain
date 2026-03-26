@@ -8,16 +8,14 @@
 
 # =====| Default Configurations |===============================================
 
-DEFAULT_CONFIG = {
+DEFAULT_PROJECT_CONFIG = {
 
     # Path to the gdc-client executable
     "gdc_client": "/ddn_exa/campbell/sli/methyltrain/gdc-client",
 
     "project_id":       "TCGA-KIRP",      # Project name (as on TCGA)
-    "reference_genome": "GRCh37",         # Default for TCGA 450K era
-
+    "reference_genome": "GRCh38",         # Default for TCGA 450K era
     "seed": 42,
-    "split": [0.60, 0.20, 0.20],
 
     "download": {
 
@@ -41,12 +39,6 @@ DEFAULT_CONFIG = {
             'platform',                  #  | to query for here for facilitating
             'reference_genome',          #  | further downstream analysis
             'cases.samples.portions.analytes.aliquots.aliquot_id'
-        ],
-
-        # Fields to request from the biospecimen query
-        "biospecimen": [
-            'files.file_id',
-            'samples.portions.analytes.aliquots.aliquot_id',
         ]
     },
 
@@ -59,11 +51,7 @@ DEFAULT_CONFIG = {
         "normalize":        True,    # Perform beta-scale normalization
         "filter_variance":  True,    # Filters low variance or extreme probes
         "convert_to_mval":  True,    # Convert beta values to M-values
-        "imputation":       True,    # Perform imputation, else default to 0
-        "batch_correction": True,    # Perform batch correction upon cohort
-        "gene_aggregation": False,   # Aggregates cohort beta values to genes
-        "winsorize":        False    # Clip extreme values for ML stability
-
+        "imputation":       True     # Perform imputation, else default to 0
     },
 
     "quality_control": {
@@ -88,17 +76,41 @@ DEFAULT_CONFIG = {
             "min_variance": 0.0001,
             "min_mean":     0.01,
             "max_mean":     0.99
-        },
-
-        "batch_correction": {
-            "batch_key": "aliquot_id",
-            "covariates": ["project_id"]    # Synonymous with CancerType
-        },
-
-        "clip_values": [0.001, 0.999]
-    },
-
-    "gene_aggregation": {
-        "regions": ["TSS200", "TSS1500"]    # TSS200, TSS1500, and/or gene_body
+        }
     }
+}
+
+DEFAULT_COHORT_CONFIG = {
+    "project_id": "pancancer",
+    "seed": 42,
+    
+    "project_dir": "/ddn_exa/campbell/sli/methyltrain/data/processed/",
+    "projects": [
+        "TCGA-BLCA",
+        "TCGA-BRCA",
+        "TCGA-GBM",
+        "TCGA-HNSC",
+        "TCGA-KIRC"
+    ],
+    
+    "toggles": {
+        "MAD_probe_fltering": True,
+        "batch_correction": False,
+        "gene_aggregation": False,
+        "clip_and_scale": True,
+        "split": True,
+    },
+        
+    "MAD_probe_filtering": 30000,
+    
+    "batch_correction": {
+        "batch_key": "batch_id",
+        "covariates": ["project_id"]    # Synonymous with CancerType
+    },
+    
+    "gene_aggregation": ["TSS200", "TSS1500"],    # TSS200, TSS1500, and/or gene_body
+    
+    "clip_and_scale": [0.01, 0.99],       # For winsorization
+    
+    "split": [0.60, 0.20, 0.20]
 }

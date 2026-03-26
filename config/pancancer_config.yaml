@@ -7,15 +7,24 @@
     "TCGA-BRCA",
     "TCGA-GBM",
     "TCGA-HNSC",
-    "TCGA-KIRC"
+    "TCGA-KIRC",
+    "TCGA-LGG",
+    "TCGA-LIHC",
+    "TCGA-LUAD",
+    "TCGA-LUSC",
+    "TCGA-PAAD",
+    "TCGA-PRAD",
+    "TCGA-SKCM",
+    "TCGA-THCA",
+    "TCGA-UCEC"
 ]
 
 "toggles":
-    "MAD_probe_fltering": True
+    "MAD_probe_fltering": False
     "batch_correction": False
     "gene_aggregation": False
-    "clip_and_scale": True
-    "split": True
+    "clip_and_scale": False
+    "split": False
 
 "MAD_probe_filtering": 30000
 

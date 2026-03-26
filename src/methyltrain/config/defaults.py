@@ -94,7 +94,7 @@ DEFAULT_COHORT_CONFIG = {
     ],
     
     "toggles": {
-        "MAD_probe_fltering": True,
+        "MAD_probe_filtering": True,
         "batch_correction": False,
         "gene_aggregation": False,
         "clip_and_scale": True,

@@ -78,7 +78,8 @@ def prepare_dataset(config: Dict,
     
 
 def prepare_cohort(config: Dict, 
-                   layout: CohortLayout) -> Tuple[ad.AnnData, ad.AnnData, 
+                   layout: CohortLayout,
+                   verbose = False) -> Tuple[ad.AnnData, ad.AnnData, 
                                                   ad.AnnData]:
     """
     Aggregate the full DNA methylation preprocessing workflow outputs
@@ -99,35 +100,54 @@ def prepare_cohort(config: Dict,
     layout.initialize()
 
     # Load each processed project AnnData object 
+    if verbose: print("Attempting to load all project AnnData objects")
     project_adatas = [load_processed_project(path) 
                       for path in layout.project_list]
+    if verbose: print("Successfully loaded all project AnnData objects")
     
     # Aggregate the projects into a cohort AnnData object
+    if verbose: print("Attempting to aggregate the cohort")
     cohort_adata = aggregate_cohort(project_adatas, layout)
+    if verbose: print("Successfully aggregated the cohort")
 
     # Perform MAD probe filtering to reduce probe dimensionality
     if config.get('toggles', {}).get('MAD_probe_filtering', True):
+        if verbose: print("Attempting to perform MAD probe filtering")
         cohort_adata = filter_by_mad(cohort_adata, config)
+        if verbose: print("Successfully performed MAD probe filtering")
 
     # Perform batch effect correction across datasets if toggled
     if config.get('toggles', {}).get('batch_correction', True):
+        if verbose: print("Attempting to perform batch correction")
         cohort_adata = cohort_batch_correction(cohort_adata, config)
+        if verbose: print("Successfully performed batch correction")
 
     # Optionally aggregate to the gene-level if toggled by user configurations
     if config.get('toggles', {}).get('gene_aggregation', True):
+        if verbose: print("Attempting to perform gene aggregation")
         cohort_adata = aggregate_genes(cohort_adata, config)
+        if verbose: print("Successfully aggregated to the gene-level")
 
     # Winsorize and scale M-values to [-1, 1] promote downstream ML stability
     if config.get('toggles', {}).get('clip_and_scale', True):
+        if verbose: print("Attempting to perform winsorization and Min-max scaling")
         cohort_adata = clip_and_scale(cohort_adata, config)
+        if verbose: print("Successfully winsorized and scaled the cohort")
 
     # Split the cohort AnnData object into train-val-test splits
     if config.get('toggles', {}).get('split', True):
+        if verbose: print("Attempting to split the cohort into training sets")
         train_adata, val_adata, test_adata = split(cohort_adata, config)
+        if verbose: print("Successfully split the cohort into training sets")
     else:
+        if verbose: print("Did not split the cohort into training sets (not toggled)")
         train_adata, val_adata, test_adata = None, None, None
 
     # Save the processed cohort adata prior to splitting
+    if verbose: print("Attempting to save the cohort AnnData object")
     save_cohort(cohort_adata, layout)
+    if verbose: print("Successfully saved the cohort AnnData object")
 
     return train_adata, val_adata, test_adata
+
+# [END]

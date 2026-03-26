@@ -12,16 +12,10 @@ import os
 
 import anndata as ad
 
+from methyltrain.api.prepare import prepare_cohort
 from methyltrain.config.loader import load_config
 from methyltrain.fs.layout import CohortLayout
-from methyltrain.api.steps import (
-    cohort_batch_correction, 
-    load_processed_project,
-    aggregate_cohort,
-    cohort_batch_correction,
-    save_cohort,
-    split
-)
+from methyltrain.api.steps import save_cohort
 
 def main():
 
@@ -53,29 +47,22 @@ def main():
         cohort_name = cohort,
         root_dir = "./data",
         project_list = project_list,
-        cohort_adata = f"../data/training/{cohort}_cohort_adata.h5ad",
-        train_adata = f"../data/training/{cohort}_train_adata.h5ad",
-        val_adata = f"../data/training/{cohort}_val_adata.h5ad",
-        test_adata = f"../data/training/{cohort}_test_adata.h5ad"
+        cohort_adata = f"../data/cohort/{cohort}_cohort_adata.h5ad",
+        train_adata = f"../data/cohort/{cohort}_train_adata.h5ad",
+        val_adata = f"../data/cohort/{cohort}_val_adata.h5ad",
+        test_adata = f"../data/cohort/{cohort}_test_adata.h5ad"
     )
     layout.initialize()
     layout.validate()
 
-    # Load each processed project AnnData object
-    project_adatas = [load_processed_project(path) 
-                      for path in layout.project_list]
+    train_adata, val_adata, test_adata = prepare_cohort(config, layout, args.verbose)
 
-    # Aggregate the projects into a cohort AnnData object
-    cohort_adata = aggregate_cohort(project_adatas, layout)
-
-    # Save the aggregated cohort
-    save_cohort(cohort_adata, layout)
-
-    # Split and save the cohort into train-val-test splits
-    train_adata, val_adata, test_adata = split(cohort_adata, config)
-    train_adata.write_h5ad(layout.train_adata)
-    val_adata.write_h5ad(layout.val_adata)
-    test_adata.write_h5ad(layout.test_adata)
+    # Save the training splits if toggled
+    if config.get('toggles', {}).get('split', True):
+        train_adata.write_h5ad(layout.train_adata)
+        val_adata.write_h5ad(layout.val_adata)
+        test_adata.write_h5ad(layout.test_adata)
+        if args.verbose: print("Saved")
 
     if args.verbose: 
         print(f"=====| Finished processing cohort {cohort} |=====")

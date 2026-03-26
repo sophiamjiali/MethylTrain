@@ -217,7 +217,7 @@ def mad_probe_filter(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         Subset AnnData with top-N MAD features.
     """
 
-    top_n = config.get('MAD_probe_filtering', {}).get('top_n', 30000)
+    top_n = config.get('MAD_probe_filtering', 30000)
 
     # Vectorize MAD calculations
     X = adata.X if isinstance(adata.X, np.ndarray) else adata.X.toarray()

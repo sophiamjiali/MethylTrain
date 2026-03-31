@@ -1,13 +1,9 @@
 cff-version: 1.0.0
-
-message: "MethylTrain"
-doi: "10.1234/methyltrain"
-version: "1.0"
-author:
-  - family-names: "Li"
-    given-names: "Sophia"
-year: "2026"
-title: "MethylTrain: A Python package for DNA methylation data engineering"
-publisher: "Sophia Mengjia Li"
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Li"
+  given-names: "Sophia"
+title: "MethylTrain: a Python package for methylation data engineering"
+version: 1.0.0
+date-released: 2026-03-31
 url: "https://github.com/sophiamjiali/MethylTrain"
-accessed: "2026-03-31"

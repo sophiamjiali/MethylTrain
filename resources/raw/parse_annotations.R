@@ -38,23 +38,15 @@ manifest_27k <- tibble(
   chr               = as.character(anno_27k$chr),
   pos               = anno_27k$pos,
   strand            = anno_27k$strand,
+  probe_type        = anno_27k$Type,
   gene_symbol       = anno_27k$Symbol,
   is_sex_chr        = chr %in% c("chrX", "chrY"),
   has_probe_snp     = FALSE,
   has_cpg_snp       = FALSE,
   has_sbe_snp       = FALSE,
   is_cross_reactive = FALSE,
-  is_multi_mapped   = FALSE,
-  Distance_to_TSS = as.numeric(anno_27k$Distance_to_TSS),
+  is_multi_mapped   = FALSE
 )
-
-# Gene annotations as functional flags based on Distance_to_TSS
-manifest_27k <- manifest_27k %>%
-  mutate(
-    TSS200 = Distance_to_TSS >= -200 & Distance_to_TSS <= 200,
-    TSS1500 = Distance_to_TSS >= -1500 & Distance_to_TSS < -200,
-    gene_body = Distance_to_TSS > 200
-  )
 
 write_csv(manifest_27k, "illumina27k_annotation_hg19.csv")
 
@@ -69,6 +61,7 @@ manifest_450k <- tibble(
   chr           = as.character(anno_450k$chr),
   pos           = anno_450k$pos,
   strand        = anno_450k$strand,
+  probe_type    = anno_450k$Type,
   gene_symbol   = anno_450k$UCSC_RefGene_Name,
   is_sex_chr    = chr %in% c("chrX", "chrY"),
   has_cpg_snp   = !is.na(anno_450k$CpG_rs),
@@ -86,7 +79,7 @@ manifest_450k <- manifest_450k %>%
 
 # Extract multi-mapped probes from the bowtie annotation
 multi_450k <- read_tsv(
-  "HumanMethylation450_15017482_v.1.1_hg19_bowtie_multimap.txt",
+  "/Volumes/FBI_Drive/MethylCDM-project/resources/raw/HumanMethylation450_15017482_v.1.1_hg19_bowtie_multimap.txt",
   col_names = "probe_id",
   show_col_types = FALSE
 )
@@ -94,14 +87,6 @@ multi_450k <- read_tsv(
 manifest_450k <- manifest_450k %>%
   mutate(
     is_multi_mapped = probe_id %in% multi_450k$probe_id
-  )
-
-# Gene annotations as functional flags based on Distance_to_TSS
-manifest_450k <- manifest_450k %>%
-  mutate(
-    TSS200 = grepl("TSS200", anno_450k$UCSC_RefGene_Group, ignore.case = TRUE),
-    TSS1500 = grepl("TSS1500", anno_450k$UCSC_RefGene_Group, ignore.case = TRUE),
-    gene_body = grepl("Body", anno_450k$UCSC_RefGene_Group, ignore.case = TRUE),
   )
 
 write_csv(
@@ -120,6 +105,7 @@ manifest_epic <- tibble(
   chr           = as.character(anno_epic$chr),
   pos           = anno_epic$pos,
   strand        = anno_epic$strand,
+  probe_type    = anno_epic$Type,
   gene_symbol   = anno_epic$UCSC_RefGene_Name,
   is_sex_chr    = chr %in% c("chrX", "chrY"),
   has_cpg_snp   = !is.na(anno_epic$CpG_rs),
@@ -136,86 +122,142 @@ manifest_epic <- manifest_epic %>%
     is_multi_mapped   = FALSE
   )
 
-# Gene annotations as functional flags based on Distance_to_TSS
-manifest_epic <- manifest_epic %>%
-  mutate(
-    TSS200 = grepl("TSS200", anno_epic$UCSC_RefGene_Group, ignore.case = TRUE),
-    TSS1500 = grepl("TSS1500", anno_epic$UCSC_RefGene_Group, ignore.case = TRUE),
-    gene_body = grepl("Body", anno_epic$UCSC_RefGene_Group, ignore.case = TRUE),
-  )
-
 write_csv(manifest_epic, "illuminaEPIC_annotation_hg19.csv")
 
 # =====| Liftover hg38 |========================================================
 
-# Fetch the liftover chain; unzip if necessary
-# gunzip("raw/hg19ToHg38.over.chain.gz", 
-#        destname = "raw/hg19ToHg38.over.chain", 
-#        overwrite = TRUE)
+# Fetch the liftover chain
+# chain <- import.chain(gunzip("hg19ToHg38.over.chain.gz"))
 chain <- import.chain("hg19ToHg38.over.chain")
 
-# Initialize each hg19 annotation as a GRanges object
-gr_hg19_27k <- GRanges(
-  seqnames = manifest_27k$chr,
-  ranges   = IRanges(start = manifest_27k$pos, end = manifest_27k$pos),
-  strand   = manifest_27k$strand,
-  probe_id = manifest_27k$probe_id
-)
-
-gr_hg19_450k <- GRanges(
-  seqnames = manifest_450k$chr,
-  ranges   = IRanges(start = manifest_450k$pos, end = manifest_450k$pos),
-  strand   = manifest_450k$strand,
-  probe_id = manifest_450k$probe_id
-)
-
-gr_hg19_epic <- GRanges(
-  seqnames = manifest_epic$chr,
-  ranges   = IRanges(start = manifest_epic$pos, end = manifest_epic$pos),
-  strand   = manifest_epic$strand,
-  probe_id = manifest_epic$probe_id
-)
-
-# Liftover each hg19 annotation to hg39
-gr_hg38_27k <- liftOver(gr_hg19_27k, chain)
-gr_hg38_450k <- liftOver(gr_hg19_450k, chain)
-gr_hg38_epic <- liftOver(gr_hg19_epic, chain)
-
-# Flatten each GRanges object
-gr_hg38_27k <- unlist(gr_hg38_27k, use.names = TRUE)
-gr_hg38_450k <- unlist(gr_hg38_450k, use.names = TRUE)
-gr_hg38_epic <- unlist(gr_hg38_epic, use.names = TRUE)
-
-# Finalize the hg38 manifests
-manifest_hg38_27k <- manifest_27k %>%
-  filter(probe_id %in% mcols(gr_hg38_27k)$probe_id) %>%
-  mutate(
-    chr    = as.character(GenomicRanges::seqnames(gr_hg38_27k)),
-    pos    = GenomicRanges::start(gr_hg38_27k),
-    strand = as.character(GenomicRanges::strand(gr_hg38_27k))
+# --- Helper: create GRanges ---
+make_gr <- function(df) {
+  
+  df <- df %>%
+    dplyr::ungroup() %>%
+    dplyr::transmute(
+      chr      = as.character(chr),
+      pos      = as.integer(pos),
+      strand   = as.character(strand),
+      probe_id = as.character(probe_id)
+    )
+  
+  chr <- df$chr
+  pos <- df$pos
+  strand <- df$strand
+  probe_id <- df$probe_id
+  
+  stopifnot(
+    length(chr) == length(pos),
+    length(pos) == length(strand),
+    length(strand) == length(probe_id)
   )
-
-manifest_hg38_450k <- manifest_450k %>%
-  filter(probe_id %in% mcols(gr_hg38_450k)$probe_id) %>%
-  mutate(
-    chr    = as.character(GenomicRanges::seqnames(gr_hg38_450k)),
-    pos    = GenomicRanges::start(gr_hg38_450k),
-    strand = as.character(GenomicRanges::strand(gr_hg38_450k))
+  
+  GRanges(
+    seqnames = chr,
+    ranges   = IRanges(start = pos, end = pos),
+    strand   = strand,
+    probe_id = probe_id
   )
+}
 
-manifest_hg38_epic <- manifest_epic %>%
-  filter(probe_id %in% mcols(gr_hg38_epic)$probe_id) %>%
-  mutate(
-    chr    = as.character(GenomicRanges::seqnames(gr_hg38_epic)),
-    pos    = GenomicRanges::start(gr_hg38_epic),
-    strand = as.character(GenomicRanges::strand(gr_hg38_epic))
+# --- Helper: liftover + clean + convert to tibble ---
+liftover_to_df <- function(gr, chain) {
+  gr_hg38 <- liftOver(gr, chain)
+  gr_hg38 <- unlist(gr_hg38, use.names = FALSE)
+  
+  # Standardize chromosome style (important)
+  GenomeInfoDb::seqlevelsStyle(gr_hg38) <- "UCSC"
+  
+  df <- tibble::tibble(
+    probe_id = mcols(gr_hg38)$probe_id,
+    chr      = as.character(GenomicRanges::seqnames(gr_hg38)),
+    pos      = GenomicRanges::start(gr_hg38),
+    strand   = as.character(GenomicRanges::strand(gr_hg38))
   )
+  
+  # Keep only uniquely mapped probes
+  df <- df %>%
+    dplyr::group_by(probe_id) %>%
+    dplyr::filter(dplyr::n() == 1) %>%
+    dplyr::ungroup()
+  
+  return(df)
+}
+
+# --- Helper: apply liftover + join back ---
+liftover_manifest <- function(manifest_df) {
+  gr <- make_gr(manifest_df)
+  df_hg38 <- liftover_to_df(gr, chain)
+  
+  manifest_hg38 <- manifest_df %>%
+    dplyr::inner_join(df_hg38, by = "probe_id")
+  
+  return(manifest_hg38)
+}
+
+# --- Apply to each platform ---
+manifest_hg38_27k  <- liftover_manifest(manifest_27k)
+manifest_hg38_450k <- liftover_manifest(manifest_450k)
+manifest_hg38_epic <- liftover_manifest(manifest_epic)
 
 # Save each liftover
 write_csv(manifest_hg38_27k, "illumina27k_annotation_hg38.csv")
 write_csv(manifest_hg38_450k, "illumina450k_annotation_hg38.csv")
 write_csv(manifest_hg38_epic, "illuminaEPIC_annotation_hg38.csv")
 
+# =====| Liftover full annotation |=============================================
+
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(GenomicRanges)
+
+anno <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+
+gr_hg19 <- GRanges(
+  seqnames = anno$chr,
+  ranges = IRanges(anno$pos, anno$pos),
+  strand = "*",
+  probe_id = rownames(anno)
+)
+
+library(rtracklayer)
+
+chain <- import.chain("hg19ToHg38.over.chain")
+gr_list <- liftOver(gr_hg19, chain)
+
+mapped <- elementNROWS(gr_list) == 1
+gr_hg38 <- unlist(gr_list[mapped])
+names(gr_hg38) <- mcols(gr_hg19)$probe_id[mapped]
+
+library(AnnotationHub)
+
+ah <- AnnotationHub()
+query(ah, c("CpG", "hg38"))
+
+cpg_islands <- ah[["AH5086"]]   # CpG islands GRanges
+
+library(GenomicRanges)
+
+islands <- cpg_islands
+
+shores <- flank(islands, 2000, both=TRUE)
+shores <- setdiff(shores, islands)
+
+shelves <- flank(islands, 4000, both=TRUE)
+shelves <- setdiff(shelves, c(islands, shores))
+
+context <- rep("OpenSea", length(gr_hg38))
+
+context[queryHits(findOverlaps(gr_hg38, islands))] <- "Island"
+context[queryHits(findOverlaps(gr_hg38, shores))]  <- "Shore"
+context[queryHits(findOverlaps(gr_hg38, shelves))] <- "Shelf"
+
+probe_context <- context
+names(probe_context) <- names(gr_hg38)
+
+probe_context
+
+# ==============================================================================
 rm(list = ls())
 gc()
 

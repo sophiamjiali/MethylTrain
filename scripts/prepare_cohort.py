@@ -62,7 +62,7 @@ def main():
         train_adata.write_h5ad(layout.train_adata)
         val_adata.write_h5ad(layout.val_adata)
         test_adata.write_h5ad(layout.test_adata)
-        if args.verbose: print("Saved")
+        if args.verbose: print("Successfully saved training splits")
 
     if args.verbose: 
         print(f"=====| Finished processing cohort {cohort} |=====")

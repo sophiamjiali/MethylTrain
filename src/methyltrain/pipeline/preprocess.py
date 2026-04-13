@@ -12,7 +12,9 @@ import numpy as np
 from inmoose.pycombat import pycombat_norm
 from typing import Dict
 
-def normalize(adata: ad.AnnData) -> ad.AnnData:
+from ..utils.bmiq_normalize import bmiq_sample
+
+def normalize(adata: ad.AnnData, annotation: pd.DataFrame) -> ad.AnnData:
     """
     Performs BMIQ (Beta Mixture Quantile) functional normalization on DNA
     methylation beta values in a CpG matrix AnnData object. 
@@ -30,45 +32,50 @@ def normalize(adata: ad.AnnData) -> ad.AnnData:
     adata : ad.AnnData
         AnnData object representing a project's DNA methylation data at the 
         CpG matrix level.
+    annotation : pd.DataFrame
+        Standardized Illumina annotations provided by the package for the 
+        project's array type and genome build.
 
     Returns
     -------
     ad.AnnData
         AnnData object representing a project's normalized DNA methylation data 
         at the CpG matrix level with updated metadata.
+
+    Raises
+    ------
+    ValueError
+        If fewer than 100 type I or type II probes are present (too few for
+        reliable mixture-model fitting).
     """
 
-    X = np.array(adata.X, copy = True).astype(np.float32)
+    # Add probe type as metadata
+    annotation = annotation.set_index('probe_id')
+    adata.var['probe_type'] = annotation.loc[adata.var_names, 'probe_type'].values
 
-    # Compute per-sample median and IQR
-    sample_median = np.nanmedian(X, axis = 1)
-    sample_iqr = (
-        np.nanpercentile(X, 75, axis = 1) -
-        np.nanpercentile(X, 25, axis = 1)
+    # Verify type 1 and type 2 probe masks
+    type1_mask = adata.var['probe_type'].values == 'I'
+    type2_mask = adata.var['probe_type'].values == 'II'
+
+    n_type1, n_type2 = type1_mask.sum(), type2_mask.sum()
+    if n_type1 < 100:
+        raise ValueError(f"Only {n_type1} type I probes found; need ≥ 100.")
+    if n_type2 < 100:
+        raise ValueError(f"Only {n_type2} type II probes found; need ≥ 100.")
+
+    X = np.array(adata.X, copy = True).astype(np.float64)
+    n_samples, n_probes = X.shape
+
+    # Parallelize the sample loop for BMIQ normalization
+    X_norm = np.array(
+        joblib.Parallel(n_jobs = -1, prefer = 'threads')(
+            joblib.delayed(bmiq_sample)(X[i], type1_mask, type2_mask)
+            for i in range(n_samples)
+        )
     )
-    
-    # Guard against invalid scaling
-    invalid = np.isnan(sample_median) | np.isnan(sample_iqr) | (sample_iqr == 0)
-    sample_iqr[invalid] = 1.0
-    sample_median[invalid] = 0.0
 
-    # Compute global median and IQR across samples
-    global_median = np.nanmedian(X)
-    global_iqr = (
-        np.nanpercentile(X, 75) -
-        np.nanpercentile(X, 25)
-    )
-    if np.isnan(global_iqr) or global_iqr == 0: global_iqr = 1.0
-
-    # Scale each sample to match the global median and IQR
-    X = ((X.T - sample_median) / sample_iqr * global_iqr + global_median).T
-
-    # Clip to [0, 1] to retain valid beta-value bounds
-    X = np.clip(X, 0, 1)
-
-    adata.X = X
-
-    # Store metadata
+    # Clip the normalized values to the valid beta range of [0-1]
+    adata.X = np.clip(X_norm, 0.0, 1.0).astype(np.float32)
     adata.uns['preprocessing_steps'].append('normalize')
 
     return adata
@@ -133,7 +140,7 @@ def impute(adata: ad.AnnData):
 
     Imputation is intended to be performed after sample- and probe-level 
     quality control such that the majority of missing values, identified as 
-    Okaytechnical artifacts, are already removed.
+    technical artifacts, are already removed.
     
     Parameters
     ----------

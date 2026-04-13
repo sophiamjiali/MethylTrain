@@ -315,7 +315,17 @@ def preprocess(adata: ad.AnnData, config: Dict, verbose: bool = False) -> ad.Ann
 
     # Perform each preprocessing step if toggled by the user-configurations
     if config.get('toggles', {}).get('normalize', True):
-        adata = normalize(adata)
+        
+        # Load the appropriate annotation provided by the package, else error
+        annotation = load_annotation(
+            platform = adata.uns['platform'], 
+            reference_genome = adata.uns['reference_genome']
+        )
+        
+        if verbose: print(f"Loaded annotation for platform {adata.uns['platform']}"
+                          f" and reference genome {adata.uns['reference_genome']}")
+            
+        adata = normalize(adata, annotation)
         if verbose: print("Successfully normalized the data")
 
     if config.get('toggles', {}).get('filter_variance', True):

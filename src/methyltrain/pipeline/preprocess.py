@@ -14,12 +14,15 @@ from typing import Dict
 
 def normalize(adata: ad.AnnData) -> ad.AnnData:
     """
-    Performs minimal beta-scale normalization and harmonization on DNA 
-    methylation values in a CpG matrix AnnData object. This aligns the 
-    distributions of beta-values across samples without altering biological 
-    signal.
+    Performs BMIQ (Beta Mixture Quantile) functional normalization on DNA
+    methylation beta values in a CpG matrix AnnData object. 
+    
+    BMIQ corrects for the two-colour Infinium type I/type II probe bias on
+    Illumina methylation arrays by fitting a three-component beta mixture 
+    model to each sample's type II probe distribution and then quantile-mapping 
+    it to the type I referennce distribution.
 
-    Normalization should be performed after sample- and probe-level quality 
+    Normalization should be performed after sample- and probe-level quality
     control and before filtering low-variance probes.
 
     Parameters

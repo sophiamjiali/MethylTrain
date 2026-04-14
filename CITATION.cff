@@ -5,5 +5,5 @@ authors:
   given-names: "Sophia"
 title: "MethylTrain: a Python package for methylation data engineering"
 version: 1.0.0
-date-released: 2026-03-31
+date-released: 2026-04-14
 url: "https://github.com/sophiamjiali/MethylTrain"

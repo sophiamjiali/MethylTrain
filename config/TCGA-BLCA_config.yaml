@@ -35,8 +35,8 @@
     "sample_qc":        True
     "probe_qc":         True
     "filter_variance":  True     # Filters low variance or extreme probes
-    "convert_to_mval":  True     # Convert beta values to M-values
     "imputation":       True     # Perform imputation, else default to 0
+    "convert_to_mval":  True     # Convert beta values to M-values
 
 "quality_control":
     

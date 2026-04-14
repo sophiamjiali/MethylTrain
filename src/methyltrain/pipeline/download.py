@@ -15,6 +15,7 @@ import datetime
 
 import pandas as pd
 
+from pathlib import Path
 from typing import Dict, List
 
 from ..fs.layout import ProjectLayout
@@ -154,7 +155,7 @@ def build_metadata(audit_table: pd.DataFrame,
         along with a status column indicating query success or failure.
     """
 
-    if verbose: print("\n~~~~~| 2. Building the Metadata |~~~~~")
+    if verbose: print("\n~~~~~| 3. Building the Metadata |~~~~~")
 
     # Fetch files that were successfully downloaded
     file_ids = audit_table.loc[audit_table['downloaded'] == 1].index.tolist()
@@ -234,7 +235,7 @@ def build_biospecimen(metadata: pd.DataFrame,
     Queries for sample biospecimen metadata used for batch correction
     """
 
-    if verbose: print("\n~~~~~| 3. Building the Biospecimen Data |~~~~~")
+    if verbose: print("\n~~~~~| 4. Building the Biospecimen Data |~~~~~")
 
     # Fetch the case IDs of all samples successfully downloaded
     case_ids = metadata['submitter_id'].unique().tolist()
@@ -334,7 +335,7 @@ def download_methylation(manifest: pd.DataFrame,
         Status log recording per-file download status ('success' or 'failed').
     """
 
-    if verbose: print("\n~~~~~| 4. Downloading Methylation Data |~~~~~")
+    if verbose: print("\n~~~~~| 2. Downloading Methylation Data |~~~~~")
 
     # Verify the `gdc-client` is properly installed on the user's device
     gdc_client_path = config.get('gdc_client', '')
@@ -343,8 +344,10 @@ def download_methylation(manifest: pd.DataFrame,
     # Pre-filter the temporary manifest for already downloaded files
     missing_files = []
     for idx, row in manifest.iterrows():
-        filepath = layout.raw_dir / str(idx)
-        if not filepath.exists():
+        # Check for both raw and cleaned file types
+        raw_path = layout.raw_dir / str(idx)
+        clean_path = layout.raw_dir / (str(idx) + '.parquet')
+        if not raw_path.exists() and not clean_path.exists():
             missing_files.append(row)
 
     remaining_files = pd.DataFrame(missing_files).reset_index()
@@ -379,24 +382,23 @@ def download_methylation(manifest: pd.DataFrame,
             # Log failure for this batch attempt, will retry failed files
             print(f"Attempt {attempt} failed, retrying remaining files...")
             time.sleep(2 ** attempt)
+            continue
         
         # Check existence per file
-        still_remaining = []
-        for _, row in remaining_files.iterrows():
-            filepath = layout.raw_dir / row['id']
-            if not filepath.exists():
-                still_remaining.append(row)
+        still_remaining = [
+            row for _, row in remaining_files.iterrows()
+            if not (layout.raw_dir / row['id']).exists()
+        ]
 
         # Prepare new manifest with only failed files
         if still_remaining:
             remaining_files = pd.DataFrame(still_remaining)
             remaining_files.to_csv(tmp_manifest, sep = '\t', index = False)
             time.sleep(2 ** attempt)
-
-        if verbose: print("Successfully downloaded the current batch")
-
         else:
             break  # all files downloaded
+
+        if verbose: print("Successfully downloaded the current batch")
 
     # Delete the temporary manifest
     if tmp_manifest.exists(): tmp_manifest.unlink()

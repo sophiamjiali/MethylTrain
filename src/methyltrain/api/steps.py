@@ -24,7 +24,6 @@ from ..pipeline.download import (
     download_methylation
 )
 from ..pipeline.preprocess import (
-    normalize,
     filter_variance,
     convert_to_mval,
     impute, 
@@ -110,9 +109,6 @@ def download(config: Dict,
     
     # Update the audit table with the metadata
     audit_table = update_metadata(audit_table, metadata)
-
-    # Clean the metadata of verbose output to the standard format
-    metadata = metadata.loc[metadata['status'] == 'success']
 
     # Save manifest, status log, metadata, and audit table
     save_manifest(manifest, layout)
@@ -285,13 +281,15 @@ def preprocess(adata: ad.AnnData, config: Dict, verbose: bool = False) -> ad.Ann
     Returns a samples x genes AnnData object with aligned metadata suitable for 
     downstream analysis.
 
+    Note that further normalization upon level 3 beta values fetched from the 
+    GDC is not performed as they are already SeSAMe-harmonized.
+
     Steps performed are toggled and configured in the user-provided 
     configurations, including the following options in order:
     
-    1. Normalization / Harmonization
-    2. Filter low variance / extreme values
-    3. Imputation of missing values
-    4. M-value conversion 
+    1. Filter low variance / extreme values
+    2. Imputation of missing values
+    3. M-value conversion 
 
     Note that batch effect correction is optionally performed after multiple 
     projects have been aggregated into a cohort.
@@ -312,21 +310,6 @@ def preprocess(adata: ad.AnnData, config: Dict, verbose: bool = False) -> ad.Ann
     """
 
     if verbose: print("=====| Beginning Preprocessing |=====")
-
-    # Perform each preprocessing step if toggled by the user-configurations
-    if config.get('toggles', {}).get('normalize', True):
-        
-        # Load the appropriate annotation provided by the package, else error
-        annotation = load_annotation(
-            platform = adata.uns['platform'], 
-            reference_genome = adata.uns['reference_genome']
-        )
-        
-        if verbose: print(f"Loaded annotation for platform {adata.uns['platform']}"
-                          f" and reference genome {adata.uns['reference_genome']}")
-            
-        adata = normalize(adata, annotation)
-        if verbose: print("Successfully normalized the data")
 
     if config.get('toggles', {}).get('filter_variance', True):
         adata = filter_variance(adata, config)
@@ -603,10 +586,11 @@ def split(adata: ad.AnnData, config: Dict) -> tuple[ad.AnnData, ad.AnnData,
 
 # =====| Project I/O |==========================================================
 
-def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
+def load_raw_project(config: Dict, layout: ProjectLayout, verbose = False) -> ad.AnnData:
     """
     Load the raw DNA methylation data of a project as an AnnData object from 
-    `.parquet` files in the raw data directory. Column metadata is initialized as the sample ID field specified in the user-provided configurations.
+    `.parquet` files in the raw data directory. Column metadata is initialized 
+    as the sample ID field specified in the user-provided configurations.
 
     All raw DNA methylation data files are loaded in parallel using for more 
     efficient loading. Note that `ThreadPoolExecutor.map()` explicitly 
@@ -662,6 +646,7 @@ def load_raw_project(config: Dict, layout: ProjectLayout) -> ad.AnnData:
     # Sort by file name as .parquets are loaded in that order
     metadata = load_metadata(layout)
     metadata = metadata.sort_values(by = 'file_name')
+    metadata = metadata.loc[metadata['status'] == 'success']
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     adata = ad.AnnData(

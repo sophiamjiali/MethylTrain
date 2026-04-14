@@ -54,7 +54,7 @@ def prepare_dataset(config: Dict,
 
     # Download, clean, and load the project data as an AnnData object
     if verbose: print("Attempting to download data")
-    audit_table = download(config, layout)
+    audit_table = download(config, layout, verbose)
     if verbose: print("Successfully downloaded data")
 
     if verbose: print("Attempting to clean the data")
@@ -67,11 +67,12 @@ def prepare_dataset(config: Dict,
 
     # Perform QC and preprocessing based on user configurations
     if verbose: print("Attempting to perform quality control")
-    adata, audit_table = quality_control(adata, audit_table, config, layout)
+    adata, audit_table = quality_control(adata, audit_table, config, 
+                                         layout, verbose)
     if verbose: print("Successfully performed quality control")
 
     if verbose: print("Attempting to preprocess the data")
-    adata = preprocess(adata, config)
+    adata = preprocess(adata, config, verbose)
     if verbose: print("Successfully preprocessed the data")
 
     return (adata, audit_table)

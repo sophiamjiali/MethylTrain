@@ -34,7 +34,6 @@
 
     "sample_qc":        True
     "probe_qc":         True
-    "normalize":        True     # Perform BMIQ functional normalization
     "filter_variance":  True     # Filters low variance or extreme probes
     "convert_to_mval":  True     # Convert beta values to M-values
     "imputation":       True     # Perform imputation, else default to 0

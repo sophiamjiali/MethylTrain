@@ -29,4 +29,4 @@ cd /ddn_exa/campbell/sli/methyltrain
 srun python -u scripts/prepare_project.py \
     --config "/ddn_exa/campbell/sli/methyltrain/config/${PROJECT_ID}_config.yaml" \
     --verbose \
-    --clean-raw-datas
+    --clean-raw-data

@@ -143,7 +143,7 @@ class ProjectLayout:
     raw_dir : str or Path, optional
         Directory for raw methylation data. Overrides `root_dir` default if 
         provided.
-    audit_table : str or Path, optional
+    audit_store : str or Path, optional
         Path for the audit table file. Overrides `root_dir` if default is provided.
     metadata : str or Path, optional
         Path for the metadata file. Overrides `root_dir` default if 
@@ -162,7 +162,7 @@ class ProjectLayout:
     ----------
     project_name : str
     raw_dir : Path
-    audit_table : Path
+    audit_store : Path
     metadata : Path
     manifest: Path
     status_log : Path
@@ -173,7 +173,7 @@ class ProjectLayout:
                  project_name: str = "",
                  root_dir: Optional[StrPath] = None,
                  raw_dir: Optional[StrPath] = None,
-                 audit_table: Optional[StrPath] = None,
+                 audit_store: Optional[StrPath] = None,
                  metadata: Optional[StrPath] = None,
                  manifest: Optional[StrPath] = None,
                  status_log: Optional[StrPath] = None,
@@ -188,9 +188,9 @@ class ProjectLayout:
         self.raw_dir: Path = (Path(raw_dir) if raw_dir is not None else 
                               root_path / "raw")
         
-        self.audit_table: Path = (
-            Path(audit_table) if audit_table is not None
-            else root_path / 'metadata' / f"{project_name}_audit_table.csv"
+        self.audit_store: Path = (
+            Path(audit_store) if audit_store is not None
+            else root_path / 'metadata' / f"{project_name}_audit_store.csv"
         )
         
         self.metadata: Path = (
@@ -214,9 +214,9 @@ class ProjectLayout:
         )
 
         self.paths = [self.raw_dir, self.metadata, self.manifest, 
-                      self.audit_table, self.status_log, self.project_adata]
+                      self.audit_store, self.status_log, self.project_adata]
         
-        self.files = [self.audit_table, self.metadata, self.manifest, 
+        self.files = [self.audit_store, self.metadata, self.manifest, 
                       self.status_log]
 
 

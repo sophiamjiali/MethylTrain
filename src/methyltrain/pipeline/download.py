@@ -15,9 +15,10 @@ import datetime
 
 import pandas as pd
 
-from pathlib import Path
 from typing import Dict, List
+from pathlib import Path
 
+from ..io.audit_store import AuditStore
 from ..fs.layout import ProjectLayout
 from ..constants import GDC_QUERY_URL, MAX_RETRIES, GDC_QUERY_BATCH_URL
 from ..utils.utils import (
@@ -27,12 +28,53 @@ from ..utils.utils import (
     extract_submitter_id,
     extract_aliquot_id
 )
-from ..utils.load_utils import load_status_log
 
-#
-# =====| Build Manifest |=======================================================
+# =====| Public API |===========================================================
 
-def build_manifest(config: Dict, verbose = False) -> pd.DataFrame:
+def download_methylation(config: Dict, layout: ProjectLayout, verbose = False):
+    """
+    Downloads DNA methylation data of a TCGA project as beta values from the 
+    TCGA GDC based on the project specified in the provided configuration 
+    object. An audit store is created to report attempted files, download 
+    statIt us, and metadata status.
+
+    A manifest is created using the GDC API and resolved at the sample level. 
+    Metadata fetching is attempted only for files who's DNA Methylation data 
+    was successfully downloaded.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary controlling workflow steps.
+    layout : ProjectLayout
+        Object representing a project dataset directory layout.
+    verbose : boolean
+        Boolean toggle for displaying verbose output.
+    """
+
+    layout.validate()
+
+    if verbose: print("=====| Attempting Project Methylation Download |=====")
+
+    # Initialize and update an AuditStore with the download status
+    audit = AuditStore(layout.audit_store.with_suffix(".db")) 
+
+    # file_ids = extract from the manuscript
+    audit.initialize()
+
+
+    if verbose: print("=====| Successfully Downloaded Methylation Data |=====")
+    return
+
+def prepare_metadata(config: Dict):
+    return
+
+
+# =====| Internal Helpers |=====================================================
+
+# ~~~~~| Download Project |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def _build_manifest(config: Dict, verbose = False) -> pd.DataFrame:
     """
     Build a GDC client manifest for a specific project and data type. Queries 
     the GDC API for files matching the user-provided configurations and 
@@ -132,177 +174,7 @@ def build_manifest(config: Dict, verbose = False) -> pd.DataFrame:
 
     return manifest
 
-
-def build_metadata(audit_table: pd.DataFrame,
-                   config: Dict, 
-                   verbose = False,
-                   batch_size: int = 20) -> pd.DataFrame:
-    """
-    Query GDC for metadata corresponding to successfully downloaded files in 
-    the audit table. Nested fields are flattened to a single level.
-
-    Parameters
-    ----------
-    audit_table : pd.DataFrame
-        Running audit table maintaining the status of all files.
-    config : dict
-        Configuration dictionary controlling workflow steps.
-
-    Returns
-    -------
-    pd.DataFrame
-        Verbose metadata with one row per attempted file. Includes all 
-        requested GDC fields as defined in the user-provided configurations, 
-        along with a status column indicating query success or failure.
-    """
-
-    if verbose: print("\n~~~~~| 3. Building the Metadata |~~~~~")
-
-    # Fetch files that were successfully downloaded
-    file_ids = audit_table.loc[audit_table['downloaded'] == 1].index.tolist()
-    if not file_ids: return pd.DataFrame()
-
-    # Prepare the GDC API request
-    metadata_fields = config.get('download', {}).get('metadata', [])
-    all_hits: List[dict] = []
-
-    # Query the metadata in batches to avoid API failures
-    for i in range(0, len(file_ids), batch_size):
-        batch = file_ids[i:i + batch_size]
-
-        filters = {'op': 'in','content': {'field': 'file_id', 'value': batch}}
-        params = {
-            'filters': json.dumps(filters),
-            'fields': ','.join(metadata_fields),
-            'format': 'JSON',
-            'size': len(file_ids)
-        }
-
-        # Return an empty dataframe if API request fails
-        try:
-            response = requests.get(GDC_QUERY_URL, params = params)
-            response.raise_for_status()
-            hits = response.json()['data']['hits']
-            all_hits.extend(hits)
-
-            if verbose: print(f"Successfully queried for batch {i}")
-
-        # Mark entire batch as failure
-        except Exception:
-            for fid in batch:
-                all_hits.append({'file_id': fid, 'status': 'failed'})
-            if verbose: print(f"Failed to query for batch {i}")
-    
-    # Drop the internal query UUID from the table
-    metadata = pd.DataFrame(all_hits)
-    metadata = metadata.drop(columns = ['id'])
-
-    # Extract nested metadata values
-    if 'cases' in metadata.columns:
-        metadata['project_id'] = (metadata['cases'].apply(extract_project_id))
-        metadata['submitter_id'] = metadata['cases'].apply(extract_submitter_id)
-        metadata['sample_type'] = metadata['cases'].apply(extract_sample_type)
-        metadata['aliquot_id'] = metadata['cases'].apply(extract_aliquot_id)
-        metadata = metadata.drop(columns = ['cases'])
-
-    if verbose: print("Successfully queried for the metadata")
-
-    # Update fetched status based on GDC response failures
-    metadata['status'] = 'success'
-
-    fetched_ids = set(metadata['file_id'])
-    missing_ids = set(file_ids) - fetched_ids
-
-    if missing_ids:
-        missing = pd.DataFrame({
-            'file_id': list(missing_ids),
-            'status': ['failed'] * len(missing_ids)
-        })
-        metadata = pd.concat([metadata, missing], ignore_index = True)
-
-    # Set the file_id as the index
-    metadata = metadata.set_index('file_id', drop = True)
-
-    if verbose: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        
-    return metadata
-
-
-def build_biospecimen(metadata: pd.DataFrame,
-                      config: Dict, 
-                      verbose = False,
-                      batch_size: int = 20) -> pd.DataFrame:
-    """
-    Queries for sample biospecimen metadata used for batch correction
-    """
-
-    if verbose: print("\n~~~~~| 4. Building the Biospecimen Data |~~~~~")
-
-    # Fetch the case IDs of all samples successfully downloaded
-    case_ids = metadata['submitter_id'].unique().tolist()
-    all_hits = []
-
-    # Query the GDC client for the biospecimen data
-    for i in range(0, len(case_ids), batch_size):
-        batch = case_ids[i:i + batch_size]
-
-        filters = {
-            "op": "in",
-            "content": {"field": "submitter_id", "value": batch}
-        }
-    
-        params = {
-            "filters": json.dumps(filters),
-            "expand": "samples.portions.analytes.aliquots",
-            "fields": ",".join(['submitter_id', 'samples.portions.submitter_id',
-                                'samples.portions.analytes.aliquots.aliquot_id',
-                                'samples.portions.analytes.aliquots.submitter_id']),
-            "format": "JSON",
-            "size": len(batch)
-        }
-
-        # Query the `cases` endpoint
-        response = requests.get(GDC_QUERY_BATCH_URL, params = params)
-        response.raise_for_status()
-        hits = response.json()['data']['hits']
-
-        if verbose: print(f"Successfully queried for batch {i}")
-
-        # Extract the nested barcode values
-        for case in hits:
-            case_id = case['submitter_id']
-            for sample in case.get('samples', []):
-                for portion in sample.get('portions', []):
-                    portion_barcode = portion.get('submitter_id')
-                    for analyte in portion.get('analytes', []):
-                        for aliquot in analyte.get('aliquots', []):
-
-                            # Use the aliquot-level barcode if available, else portion-level
-                            aliquot_barcode = aliquot.get('submitter_id', portion_barcode)
-                            all_hits.append({
-                                "case_id": case_id,
-                                "aliquot_id": aliquot.get('aliquot_id'),
-                                "barcode": aliquot_barcode
-                            })
-
-    # Keep only rows corresponding to aliquots in adata
-    biospecimen = pd.DataFrame(all_hits)
-    biospecimen = biospecimen[biospecimen['aliquot_id'].isin(metadata['aliquot_id'])]
-
-    if verbose: print("Successfully queried for the biospecimen data")
-
-    # Drop exact duplicates
-    biospecimen = biospecimen.drop_duplicates(subset = 'aliquot_id')
-    biospecimen['aliquot_id'] = biospecimen['aliquot_id'].astype(str)
-
-    if verbose: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    
-    return biospecimen
-
-
-# =====| Download Methylation |=================================================
-
-def download_methylation(manifest: pd.DataFrame, 
+def _download_methylation(manifest: pd.DataFrame, 
                          config: Dict,
                          layout: ProjectLayout,
                          verbose = False) -> pd.DataFrame:
@@ -425,5 +297,174 @@ def download_methylation(manifest: pd.DataFrame,
     if verbose: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     return status_log
+
+
+# ~~~~~| Prepare Metadata |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def _build_metadata(audit_table: pd.DataFrame,
+                   config: Dict, 
+                   verbose = False,
+                   batch_size: int = 20) -> pd.DataFrame:
+    """
+    Query GDC for metadata corresponding to successfully downloaded files in 
+    the audit table. Nested fields are flattened to a single level.
+
+    Parameters
+    ----------
+    audit_table : pd.DataFrame
+        Running audit table maintaining the status of all files.
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    pd.DataFrame
+        Verbose metadata with one row per attempted file. Includes all 
+        requested GDC fields as defined in the user-provided configurations, 
+        along with a status column indicating query success or failure.
+    """
+
+    if verbose: print("\n~~~~~| 3. Building the Metadata |~~~~~")
+
+    # Fetch files that were successfully downloaded
+    file_ids = audit_table.loc[audit_table['downloaded'] == 1].index.tolist()
+    if not file_ids: return pd.DataFrame()
+
+    # Prepare the GDC API request
+    metadata_fields = config.get('download', {}).get('metadata', [])
+    all_hits: List[dict] = []
+
+    # Query the metadata in batches to avoid API failures
+    for i in range(0, len(file_ids), batch_size):
+        batch = file_ids[i:i + batch_size]
+
+        filters = {'op': 'in','content': {'field': 'file_id', 'value': batch}}
+        params = {
+            'filters': json.dumps(filters),
+            'fields': ','.join(metadata_fields),
+            'format': 'JSON',
+            'size': len(file_ids)
+        }
+
+        # Return an empty dataframe if API request fails
+        try:
+            response = requests.get(GDC_QUERY_URL, params = params)
+            response.raise_for_status()
+            hits = response.json()['data']['hits']
+            all_hits.extend(hits)
+
+            if verbose: print(f"Successfully queried for batch {i}")
+
+        # Mark entire batch as failure
+        except Exception:
+            for fid in batch:
+                all_hits.append({'file_id': fid, 'status': 'failed'})
+            if verbose: print(f"Failed to query for batch {i}")
+    
+    # Drop the internal query UUID from the table
+    metadata = pd.DataFrame(all_hits)
+    metadata = metadata.drop(columns = ['id'])
+
+    # Extract nested metadata values
+    if 'cases' in metadata.columns:
+        metadata['project_id'] = (metadata['cases'].apply(extract_project_id))
+        metadata['submitter_id'] = metadata['cases'].apply(extract_submitter_id)
+        metadata['sample_type'] = metadata['cases'].apply(extract_sample_type)
+        metadata['aliquot_id'] = metadata['cases'].apply(extract_aliquot_id)
+        metadata = metadata.drop(columns = ['cases'])
+
+    if verbose: print("Successfully queried for the metadata")
+
+    # Update fetched status based on GDC response failures
+    metadata['status'] = 'success'
+
+    fetched_ids = set(metadata['file_id'])
+    missing_ids = set(file_ids) - fetched_ids
+
+    if missing_ids:
+        missing = pd.DataFrame({
+            'file_id': list(missing_ids),
+            'status': ['failed'] * len(missing_ids)
+        })
+        metadata = pd.concat([metadata, missing], ignore_index = True)
+
+    # Set the file_id as the index
+    metadata = metadata.set_index('file_id', drop = True)
+
+    if verbose: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        
+    return metadata
+
+
+def _build_biospecimen(metadata: pd.DataFrame,
+                      config: Dict, 
+                      verbose = False,
+                      batch_size: int = 20) -> pd.DataFrame:
+    """
+    Queries for sample biospecimen metadata used for batch correction
+    """
+
+    if verbose: print("\n~~~~~| 4. Building the Biospecimen Data |~~~~~")
+
+    # Fetch the case IDs of all samples successfully downloaded
+    case_ids = metadata['submitter_id'].unique().tolist()
+    all_hits = []
+
+    # Query the GDC client for the biospecimen data
+    for i in range(0, len(case_ids), batch_size):
+        batch = case_ids[i:i + batch_size]
+
+        filters = {
+            "op": "in",
+            "content": {"field": "submitter_id", "value": batch}
+        }
+    
+        params = {
+            "filters": json.dumps(filters),
+            "expand": "samples.portions.analytes.aliquots",
+            "fields": ",".join(['submitter_id', 'samples.portions.submitter_id',
+                                'samples.portions.analytes.aliquots.aliquot_id',
+                                'samples.portions.analytes.aliquots.submitter_id']),
+            "format": "JSON",
+            "size": len(batch)
+        }
+
+        # Query the `cases` endpoint
+        response = requests.get(GDC_QUERY_BATCH_URL, params = params)
+        response.raise_for_status()
+        hits = response.json()['data']['hits']
+
+        if verbose: print(f"Successfully queried for batch {i}")
+
+        # Extract the nested barcode values
+        for case in hits:
+            case_id = case['submitter_id']
+            for sample in case.get('samples', []):
+                for portion in sample.get('portions', []):
+                    portion_barcode = portion.get('submitter_id')
+                    for analyte in portion.get('analytes', []):
+                        for aliquot in analyte.get('aliquots', []):
+
+                            # Use the aliquot-level barcode if available, else portion-level
+                            aliquot_barcode = aliquot.get('submitter_id', portion_barcode)
+                            all_hits.append({
+                                "case_id": case_id,
+                                "aliquot_id": aliquot.get('aliquot_id'),
+                                "barcode": aliquot_barcode
+                            })
+
+    # Keep only rows corresponding to aliquots in adata
+    biospecimen = pd.DataFrame(all_hits)
+    biospecimen = biospecimen[biospecimen['aliquot_id'].isin(metadata['aliquot_id'])]
+
+    if verbose: print("Successfully queried for the biospecimen data")
+
+    # Drop exact duplicates
+    biospecimen = biospecimen.drop_duplicates(subset = 'aliquot_id')
+    biospecimen['aliquot_id'] = biospecimen['aliquot_id'].astype(str)
+
+    if verbose: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    
+    return biospecimen
 
 # [END]

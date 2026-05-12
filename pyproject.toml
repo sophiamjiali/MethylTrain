@@ -18,6 +18,5 @@ dependencies = []
 Homepage = "https://github.com/sophiamjiali/methyltrain"
 Issues = "https://github.com/sophiamjiali/methyltrain/issues"
 
-[tool.setuptools]
-package-dir = { "" = "src" }
-packages = ["methyltrain"]
+[tool.setuptools.packages.find]
+where = ["src"]

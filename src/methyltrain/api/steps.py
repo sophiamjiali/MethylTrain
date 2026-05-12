@@ -503,8 +503,8 @@ def clip_and_scale(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
     # Perform min-max scaling to [-1, 1]
     range = upper_val - lower_val
-    if range_val == 0: return adata
-    X = 2 * ((X - lower_val) / range_val) - 1
+    if range == 0: return adata
+    X = 2 * ((X - lower_val) / range) - 1
     
     adata.X = X.astype(np.float32)
     adata.uns['scaling_metadata'] = {

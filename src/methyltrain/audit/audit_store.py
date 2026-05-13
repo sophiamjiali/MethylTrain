@@ -144,14 +144,4 @@ class AuditStore:
         )
         return [row[0] for row in cursor.fetchall()]
     
-    def get_ids_by_metadata_status(self, status: int) -> list:
-        cursor = self.conn.execute(
-            """
-            SELECT file_id
-            FROM audit
-            WHERE metadata_status = ?
-            """, (status,)
-        )
-        return [row[0] for row in cursor.fetchall()]
-
 # [END]

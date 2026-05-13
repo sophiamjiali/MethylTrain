@@ -1,5 +1,8 @@
 # =====| Project Details |======================================================
 
+# Toggle for automatically deleting raw data after the pipeline has finished
+clean_raw_data: True
+
 project:
   id: TCGA-XXXX
   reference_genome: GRCh38

@@ -75,7 +75,6 @@ def download_methylation(config: Dict,
     logger.info("Successfully queried for the manifest.")
 
     # Initialize the AuditStore with queried file_id
-    audit = AuditStore(layout.audit_store.with_suffix(".db")) 
     audit.initialize(manifest.index.tolist())
     logger.info("Successfully initialized the audit store.")
 
@@ -83,7 +82,7 @@ def download_methylation(config: Dict,
     _download_methylation(manifest, audit, config, layout)
     logger.info("Successfully downloaded methylation data.")
 
-    logger.info("=====| Successfully Downloaded Methylation Data |=====")
+    logger.info("~~~~~| Successfully Downloaded Methylation Data |~~~~~\n")
     return manifest
 
 
@@ -105,7 +104,7 @@ def prepare_metadata(config: Dict, audit: AuditStore) -> pd.DataFrame:
         Consolidated metadata and biospecimen data for the project.
     """
 
-    logger.info("=====| Attempting Project Metadata Download |=====")
+    logger.info("~~~~~| Attempting Project Metadata Download |~~~~~")
 
     # Query the GDC API for the project metadata and biospecimen data
     metadata = _build_metadata(config, audit)
@@ -118,7 +117,7 @@ def prepare_metadata(config: Dict, audit: AuditStore) -> pd.DataFrame:
     metadata['batch_id'] = metadata['barcode'].apply(extract_batch_id)
     logger.info("Successfully consolidated metadata and biospecimen data.")
 
-    logger.info("=====| Succesffully Downloaded Project Metadata |=====")
+    logger.info("~~~~~| Successfully Downloaded Project Metadata |~~~~~\n")
 
     return metadata
 

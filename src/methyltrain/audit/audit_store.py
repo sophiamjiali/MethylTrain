@@ -30,10 +30,12 @@ class AuditStore:
 
                 download_status INTEGER DEFAULT 0,
                 metadata_status INTEGER DEFAULT 0,
+                biospecimen_status INTEGER DEFAULT 0,
                 qc_status INTEGER DEFAULT 0,
 
                 download_timestamp TEXT,
                 metadata_timestamp TEXT,
+                biospecimen_timestamp TEXT,
                 qc_timestamp TEXT,
                 
                 raw_data_path TEXT,
@@ -96,6 +98,18 @@ class AuditStore:
         )
         self.conn.commit()
 
+    def set_biospecimen_status(self, file_id: str, status: int):
+        self.conn.execute(
+            """
+            UPDATE audit
+            SET biospecimen_status = ?,
+                biospecimen_timestamp = ?,
+                updated_at = ?
+            WHERE file_id = ?
+            """, (status, self._now(), self._now(), file_id)
+        )
+        self.conn.commit()
+
     def set_qc_status(self, file_id: str, status: int):
         self.conn.execute(
             """
@@ -118,5 +132,16 @@ class AuditStore:
             """, (path, self._now(), file_id)
         )
         self.conn.commit()
+
+    # ~~~~~| Getters |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_ids_by_download_status(self, status: int) -> list:
+        cursor = self.conn.execute(
+            """
+            SELECT file_id
+            FROM audit
+            WHERE download_status = ?
+            """, (status,)
+        )
+        return [row[0] for row in cursor.fetchall()]
 
 # [END]

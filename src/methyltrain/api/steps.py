@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List, Tuple
 from pathlib import Path
 
-from ..pipeline.download import (
+from ..project.download import (
     build_manifest, 
     build_biospecimen,
     build_metadata,

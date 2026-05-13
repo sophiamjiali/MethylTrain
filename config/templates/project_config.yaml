@@ -7,7 +7,7 @@ project:
 
 paths:
   gdc_client: /ddn_exa/campbell/sli/methyltrain/gdc-client
-  output_dir: /data
+  output_dir: /output   # Root output directory, parent of projects/ & cohorts/
 
 # =====| Download Parameters |==================================================
 

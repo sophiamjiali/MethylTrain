@@ -16,7 +16,8 @@ from methyltrain.audit.audit_store import AuditStore
 from methyltrain.utils.logging import configure_logger
 from methyltrain.io.write import save_manifest, save_metadata
 
-from methyltrain.project.download import download_methylation, prepare_metadata
+from methyltrain.project.download import download_methylation
+from methyltrain.project.metadata import prepare_metadata
 
 def prepare_project(config: Dict) -> ad.AnnData:
     """

@@ -19,7 +19,7 @@ from typing import Dict
 
 from methyltrain.audit.audit_store import AuditStore
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.constants import GDC_QUERY_URL, MAX_RETRIES
+from methyltrain.old_constants import GDC_QUERY_URL, MAX_RETRIES
 from methyltrain.utils.utils import verify_gdc_client
 
 logger = logging.getLogger(__name__)

@@ -15,14 +15,14 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Tuple
 
-from ..constants import (
+from ..old_constants import (
     PLATFORM_TYPES, 
     REFERENCE_GENOME_TYPES,
     ANNOTATION_hg19_PATHS,
     ANNOTATION_hg38_PATHS
 )
 
-from .. import constants
+from .. import old_constants
 
 # ======| File I/O Utilities |==================================================
 
@@ -85,24 +85,24 @@ def load_annotation(platform: str, reference_genome: str) -> pd.DataFrame:
     """
 
     # Verify the array type and genome build provided are valid
-    if platform not in constants.PLATFORM_TYPES:
+    if platform not in old_constants.PLATFORM_TYPES:
         raise ValueError(f"Platform {platform} was not recognized from the "
-                         f"supported types: {constants.PLATFORM_TYPES}")
+                         f"supported types: {old_constants.PLATFORM_TYPES}")
 
-    if reference_genome not in constants.REFERENCE_GENOME_TYPES:
+    if reference_genome not in old_constants.REFERENCE_GENOME_TYPES:
         raise ValueError(f"Reference genome {reference_genome} was not "
                          f"recognized from the supported types: "
-                         f"{constants.REFERENCE_GENOME_TYPES}")
+                         f"{old_constants.REFERENCE_GENOME_TYPES}")
     
     # Load the appropriate genome build annotation path (provided by package)
     if reference_genome == "GRCh37":
-        anno_path = constants.ANNOTATION_hg19_PATHS[platform]
+        anno_path = old_constants.ANNOTATION_hg19_PATHS[platform]
     elif reference_genome == "GRCh38":
-        anno_path = constants.ANNOTATION_hg38_PATHS[platform]
+        anno_path = old_constants.ANNOTATION_hg38_PATHS[platform]
     else:
         raise ValueError(f"Reference genome {reference_genome} was not "
                          f"recognized from the supported types: "
-                         f"{constants.REFERENCE_GENOME_TYPES}")
+                         f"{old_constants.REFERENCE_GENOME_TYPES}")
 
     return pd.read_parquet(anno_path)
 

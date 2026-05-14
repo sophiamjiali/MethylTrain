@@ -9,6 +9,14 @@
 from pathlib import Path
 from typing import List
 
+from methyltrain.constants.project_layout import (
+    RAW_DIR,
+    METADATA_DIR,
+    MANIFEST,
+    METADATA,
+    AUDIT,
+    ADATA
+)
 
 class ProjectLayout:
     """
@@ -48,14 +56,14 @@ class ProjectLayout:
         
         # Initialize directory structure
         self.project_dir = Path(root_dir)
-        self.raw_dir = self.project_dir / "raw"
-        self.metadata_dir = self.project_dir / "metadata"
+        self.raw_dir = self.project_dir / RAW_DIR
+        self.metadata_dir = self.project_dir / METADATA_DIR
 
         # Define output object destinations
-        self.manifest = self.metadata_dir / "manifest.csv"
-        self.metadata = self.metadata_dir / "metadata.csv"
-        self.audit_store = self.metadata_dir / "audit_store.csv"
-        self.adata = self.project_dir / f"{self.project_name}_adata.h5ad"
+        self.manifest = self.metadata_dir / MANIFEST
+        self.metadata = self.metadata_dir / METADATA
+        self.audit_store = self.metadata_dir / AUDIT
+        self.adata = self.project_dir / f"{self.project_name}{ADATA}"
 
         # Define shortcut attributes for directories and files
         self.dir_paths = [self.project_dir, self.raw_dir, self.metadata_dir]

@@ -1,5 +1,5 @@
 # ==============================================================================
-# Script:           layout.py
+# Script:           project/layout.py
 # Purpose:          Defines and manages the filesystem layout for a dataset
 # Author:           Sophia Li
 # Affiliation:      CCG Lab, Princess Margaret Cancer Center, UHN, UofT
@@ -39,7 +39,6 @@ class ProjectLayout:
     Attributes
     ----------
     project_name : str
-    root_dir : Path
     project_dir: Path
     raw_dir : Path
     metadata_dir : Path
@@ -51,11 +50,11 @@ class ProjectLayout:
     file_paths: List(Path)
     """
 
-    def __init__(self, project_name: str, root_dir: str):
+    def __init__(self, project_name: str, project_dir: str):
         self.project_name = project_name
         
         # Initialize directory structure
-        self.project_dir = Path(root_dir)
+        self.project_dir = Path(project_dir)
         self.raw_dir = self.project_dir / RAW_DIR
         self.metadata_dir = self.project_dir / METADATA_DIR
 
@@ -78,7 +77,7 @@ class ProjectLayout:
             / "projects"
             / project_id
         )
-        return cls(project_name = project_id, root_dir = root)
+        return cls(project_name = project_id, project_dir = root)
 
 
     def initialize(self):

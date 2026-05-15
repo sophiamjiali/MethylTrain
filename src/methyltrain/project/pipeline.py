@@ -15,9 +15,12 @@ from methyltrain.project.layout import ProjectLayout
 from methyltrain.audit.audit_store import AuditStore
 from methyltrain.utils.logging import configure_logger
 from methyltrain.io.write import save_manifest, save_metadata
+from methyltrain.io.datasets import load_raw_project
 
 from methyltrain.project.download import download_methylation
 from methyltrain.project.metadata import prepare_metadata
+from methyltrain.project.clean import clean_data
+from methyltrain.project.qc import quality_control
 
 def prepare_project(config: Dict) -> ad.AnnData:
     """
@@ -61,12 +64,17 @@ def prepare_project(config: Dict) -> ad.AnnData:
     logger.info("-----| Beginning Pipeline |-----\n")
 
     # ~~~~~| 1. Download and Clean Data |~~~~~
-    manifest = download_methylation(config, layout, audit)
-    metadata = prepare_metadata(config, audit)
 
-    # next: implement clean data
+    # Download and clean the raw DNA Methylation data and metadata
+    manifest, download_report = download_methylation(config, layout)
+    metadata, metadata_report, biospec_report = prepare_metadata(config, audit)
+    clean_data(layout, audit)
+
+    # Load the raw data into a CpG matrix
+    adata = load_raw_project(config, layout)
 
     # ~~~~~| 2. Quality Control |~~~~~
+    adata, qc_report = quality_control(adata, config, layout)
 
     # ~~~~~| 3. Preprocessing |~~~~~
 
@@ -76,9 +84,15 @@ def prepare_project(config: Dict) -> ad.AnnData:
     save_manifest(manifest, layout)
     save_metadata(metadata, layout)
 
+    # ~~~~~| 5. Auditing |~~~~~
+    audit.initialize(manifest.index.tolist())
+    audit.apply_download_report(download_report)
+    audit.apply_metadata_report(metadata_report)
+    audit.apply_biospecimen_report(biospec_report)
+    audit.apply_qc_report(qc_report)
+
     # Export the AuditStore object to a CSV file
 
-    # save all the metadata and auditstore to csv, adata, etc.
 
     # ~~~~~| 5. Cleanup |~~~~~
 

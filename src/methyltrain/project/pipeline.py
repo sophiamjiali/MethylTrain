@@ -21,6 +21,8 @@ from methyltrain.project.download import download_methylation
 from methyltrain.project.metadata import prepare_metadata
 from methyltrain.project.clean import clean_data
 from methyltrain.project.qc import quality_control
+from methyltrain.project.preprocess import preprocess
+
 
 def prepare_project(config: Dict) -> ad.AnnData:
     """
@@ -77,6 +79,7 @@ def prepare_project(config: Dict) -> ad.AnnData:
     adata, qc_report = quality_control(adata, config, layout)
 
     # ~~~~~| 3. Preprocessing |~~~~~
+    adata = preprocess(adata, config)
 
     # ~~~~~| 4. I/O |~~~~~
 
@@ -103,3 +106,7 @@ def prepare_project(config: Dict) -> ad.AnnData:
 
 
     logger.info("=====================================================")
+
+    return adata
+
+# [END]

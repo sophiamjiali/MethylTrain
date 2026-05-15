@@ -76,9 +76,14 @@ def quality_control(adata: ad.AnnData,
     toggles = config.get('toggles', {})
     qc_report, flag = [{}], False
 
+    # Fetch all toggles and perform each if indicated
+    apply_sample_qc = config.get('toggles', {}).get('sample_qc', True)
+    apply_probe_qc = config.get('toggles', {}).get('probe_qc', True)
+
+    if apply_sample_qc or apply_probe_qc: adata.uns['qc'] = {}
+
     # Perform sample-level quality control if toggled
-    if toggles.get('sample_qc', True): 
-        flag = True
+    if apply_sample_qc:
 
         # Fetch relevant thresholds
         qc_cfg = config.get('quality_control', {}).get('sample_qc', {})
@@ -89,8 +94,7 @@ def quality_control(adata: ad.AnnData,
         logger.info("Successfully performed sample quality control.")
 
     # Perform probe-level quality control if toggled
-    if toggles.get('probe_qc', True):
-        flag = True
+    if apply_probe_qc:
 
         # Load the appropriate annotation provided by the package
         annotation = load_annotation(
@@ -109,7 +113,7 @@ def quality_control(adata: ad.AnnData,
 
 
     # Update the AnnData object metadata to reflect processing
-    if flag:
+    if apply_probe_qc or apply_probe_qc:
         adata.uns['pipeline']['state'] = 'processed'
         adata.uns['pipeline']['steps'].append('qc')
 

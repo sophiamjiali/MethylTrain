@@ -64,3 +64,5 @@ preprocessing:
     min_variance: 0.0001
     min_mean: 0.01
     max_mean: 0.99
+  mval_conversion:
+    epsilon: 0.001

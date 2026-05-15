@@ -20,7 +20,7 @@ from typing import Dict
 from methyltrain.audit.audit_store import AuditStore
 from methyltrain.project.layout import ProjectLayout
 from methyltrain.constants.paths import GDC_QUERY_URL
-from methyltrain.utils.utils import verify_gdc_client
+from methyltrain.utils.gdc import verify_gdc_client
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +283,7 @@ def _compute_download_report(manifest: pd.DataFrame,
         report.append({
             "file_id": str(file_id),
             "file_name": row.get("file_name", ""),
-            "download_status": status,
+            "download_status": status
         })
 
     return report

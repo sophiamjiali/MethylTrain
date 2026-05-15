@@ -12,19 +12,18 @@ import anndata as ad
 from typing import Dict
 
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.audit.audit_store import AuditStore
-from methyltrain.utils.logging import configure_logger
-from methyltrain.io.write import save_manifest, save_metadata
+from methyltrain.project.results import ProjectResult
 from methyltrain.io.datasets import load_raw_project
-
 from methyltrain.project.download import download_methylation
 from methyltrain.project.metadata import prepare_metadata
 from methyltrain.project.clean import clean_data
 from methyltrain.project.qc import quality_control
 from methyltrain.project.preprocess import preprocess
 
+logger = logging.getLogger(__name__)
 
-def prepare_project(config: Dict, ) -> ad.AnnData:
+
+def prepare_project(config: Dict, layout: ProjectLayout) -> ProjectResult:
     """
     Upper-level orchestration API for the full project pipeline. Downloads and 
     preprocesses DNA Methylation data for the project specified in the 
@@ -34,24 +33,18 @@ def prepare_project(config: Dict, ) -> ad.AnnData:
     ----------
     config : dict
         Configuration dictionary controlling workflow steps.
+    layout : ProjectLayout
+        Object representing a project dataset directory layout.
 
     Returns
     -------
-    ad.AnnData
-        The processed DNA Methylation dataset.
+    ProjectResult
+        The wrapped project pipeline results.
     """
 
     # Fetch aliases for commonly accessed configuration subgroups
     project_cfg = config.get('project', {})
     paths_cfg = config.get('paths', {})
-    
-    # Initialize the project's default output layout
-    layout = ProjectLayout.from_config(config)
-    layout.initialize()
-    layout.validate()
-
-    # Initialize a logger to capture verbose output
-    logger = configure_logger(level = logging.INFO)
 
     logger.info("=====| MethylTrain: Project Processing Pipeline |=====\n")
     logger.info("~~~~~| Project Details |~~~~~")
@@ -62,50 +55,34 @@ def prepare_project(config: Dict, ) -> ad.AnnData:
     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     logger.info("-----| Beginning Pipeline |-----\n")
 
-    # Initialize the AuditStore for download status logging
-    success = False
-    with AuditStore(layout.audit_store.with_suffix(".db")) as audit:
-        try:
-            # ~~~~~| 1. Download and Clean Data |~~~~~
-            manifest, download_report = download_methylation(config, layout)
-            audit.initialize(manifest.index.tolist())
-            audit.apply_download_report(download_report)
+    manifest, download_report = download_methylation(config, layout)
 
-            metadata, meta_report, bio_report = prepare_metadata(config, audit)
-            audit.apply_metadata_report(meta_report)
-            audit.apply_biospecimen_report(bio_report)
+    # Extract the IDs of files who's beta values were downloaded
+    ids = [d['file_id'] for d in download_report 
+                if d.get('download_status') == 1]
 
-            cleaning_report = clean_data(layout, audit)
-            audit.apply_cleaning_report(cleaning_report)
+    metadata, meta_report, bio_report = prepare_metadata(config, ids)
+    cleaning_report = clean_data(layout, ids)
+    adata = load_raw_project(config, layout)
+    adata, qc_report = quality_control(adata, config, layout)
+    adata = preprocess(adata, config)
 
-            adata = load_raw_project(config, layout)
+    # Optionally remove all raw data
+    if config.get('clean_raw_data', False):
+        for file in layout.raw_dir.glob("*.parquet"): file.unlink()
+        logger.info("Successfully cleaned all raw data.")
 
-            # ~~~~~| 2. Quality Control |~~~~~
-            adata, qc_report = quality_control(adata, config, layout)
-            audit.apply_qc_report(qc_report)
+    logger.info("=====================================================")
 
-            # ~~~~~| 3. Preprocessing |~~~~~
-            adata = preprocess(adata, config)
-
-            # ~~~~~| 4. I/O |~~~~~
-
-            # Save all metadata to CSV files as specified in the layout
-            save_manifest(manifest, layout)
-            save_metadata(metadata, layout)
-
-            # ~~~~~| 5. Cleanup |~~~~~
-
-            # Optionally remove all raw data
-            if config.get('clean_raw_data', False):
-                for file in layout.raw_dir.glob("*.parquet"): file.unlink()
-                logger.info("Successfully cleaned all raw data.")
-
-            logger.info("=====================================================")
-            success = True
-
-            return adata
-
-        finally:
-            if success: audit.export_csv(layout.audit_store)
+    return ProjectResult(
+        adata = adata,
+        manifest = manifest,
+        metadata = metadata,
+        download_report = download_report,
+        metadata_report = meta_report,
+        biospecimen_report = bio_report,
+        cleaning_report = cleaning_report,
+        qc_report = qc_report
+    )
 
 # [END]

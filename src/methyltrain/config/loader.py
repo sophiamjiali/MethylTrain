@@ -9,13 +9,13 @@
 import yaml
 from pathlib import Path
 
-def load_config(config_path: str):
+def load_config(path: Path):
     """
     Load a configuration file.
 
     Parameters
     ----------
-    config_path : str or Path, optional
+    path : str or Path, optional
         Path to a YAML configuration file.
 
     Returns
@@ -29,7 +29,6 @@ def load_config(config_path: str):
     FileNotFoundError
         If a configuration path is provided and doesn't exist.
     """
-    path = Path(config_path)
     if not path.is_file():
             raise FileNotFoundError(f"Configuration file not found: {path}")
     

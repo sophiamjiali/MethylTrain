@@ -16,7 +16,7 @@ from typing import Dict, List
 
 from methyltrain.audit.audit_store import AuditStore
 from methyltrain.constants.paths import GDC_QUERY_URL, GDC_QUERY_BATCH_URL
-from methyltrain.utils.utils import (
+from methyltrain.utils.gdc import (
     extract_batch_id,
     extract_project_id,
     extract_sample_type,
@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 
 # =====| Public API |===========================================================
 
-def prepare_metadata(config: Dict, audit: AuditStore) -> tuple[pd.DataFrame, 
-                                                               list[dict], 
-                                                               list[dict]]:
+def prepare_metadata(config: Dict, file_ids: list[str]) -> tuple[pd.DataFrame, 
+                                                                 list[dict], 
+                                                                 list[dict]]:
     """
     Downloads biospecimen and metadata of a TCGA project as a CSV file from the 
     TCGA GDC based on the project specified in the provided configuration 
@@ -43,6 +43,8 @@ def prepare_metadata(config: Dict, audit: AuditStore) -> tuple[pd.DataFrame,
     ----------
     config : dict
         Configuration dictionary controlling workflow steps.
+    file_ids : list[str]
+        List of file_ids to query metadata for (based on download status).
 
     Returns
     -------
@@ -57,14 +59,11 @@ def prepare_metadata(config: Dict, audit: AuditStore) -> tuple[pd.DataFrame,
     logger.info("~~~~~| Attempting Project Metadata Download |~~~~~")
 
     # Query the GDC API for the project metadata
-    file_ids = audit.get_ids_by_download_status(status = 1)
     metadata_fields = config.get('metadata', [])
-
     metadata, metadata_report = _build_metadata(file_ids, metadata_fields)
     logger.info("Successfully queried for the metadata.")
 
     # Query the GDC API for the project biospecimen data
-    file_ids = audit.get_ids_by_download_status(status = 1)
     file_meta = metadata.loc[metadata.index.isin(file_ids),
                              ['aliquot_id', 'submitter_id']].dropna()
 
@@ -162,13 +161,11 @@ def _build_biospecimen(file_ids: list[str],
     """
     Query the GDC API for biospecimen metadata corresponding to the 
     successfully downloaded files (based on metadata, and subsequently DNA 
-    Methylation data download status)in the audit table. Nested fields are 
+    Methylation data download status) in the audit table. Nested fields are 
     flattened to a single level.
 
     Parameters
     ----------
-    audit: AuditStore
-        Metadata for downloading and preprocessing fidelity of the project.
     config : dict
         Configuration dictionary controlling workflow steps.
     metadata : pd.DataFrame

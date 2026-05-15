@@ -12,6 +12,7 @@ from pathlib import Path
 
 # Project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
+DEFAULT_CONFIG_DIR = PROJECT_ROOT / "configs"
 
 # Query link for the GDC API for fetching DNA methylation beta values
 GDC_QUERY_URL = "https://api.gdc.cancer.gov/files"

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # =====| Public API |===========================================================
 
-def clean_data(layout: ProjectLayout, audit: AuditStore) -> list[dict]:
+def clean_data(layout: ProjectLayout, file_ids: list[str]) -> list[dict]:
     """
     Cleans raw TCGA DNA methylation beta value .txt files by converting them 
     to .parquet, flattening directory structure and removing accessory files 
@@ -31,10 +31,10 @@ def clean_data(layout: ProjectLayout, audit: AuditStore) -> list[dict]:
 
     Parameters
     ----------
-    audit: AuditStore
-        Metadata for downloading and preprocessing fidelity of the project.
     layout : ProjectLayout
         Object representing a project dataset directory layout.
+    file_ids : list[str]
+        List of file IDs to clean (based on download status).
 
     Returns
     -------
@@ -47,12 +47,8 @@ def clean_data(layout: ProjectLayout, audit: AuditStore) -> list[dict]:
 
     logger.info("=====| Attempting to Clean Raw Data |=====")
 
-    # Query for raw files that were successfully downloaded
-    audit_cols = ("file_id", "file_name", "raw_data_path")
-    downloaded = audit.get_files_by_download_status(1, audit_cols)
-
     report = []
-    for file_id, file_name, raw_data_path in downloaded:
+    for file_id, file_name, raw_data_path in file_ids:
         if raw_data_path is not None: continue
 
         # Name the .parquet file with its UUID, not its old file name

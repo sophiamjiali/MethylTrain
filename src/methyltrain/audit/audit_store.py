@@ -10,9 +10,12 @@
 # ==============================================================================
 
 import sqlite3
-from typing import List
+
 import pandas as pd
+
+from typing import List
 from datetime import datetime
+from pathlib import Path
 
 from methyltrain.constants.database import AUDIT_FIELDS, AUDIT_NAME
 
@@ -23,6 +26,12 @@ class AuditStore:
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
         self._init_schema()
+
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
 
     def _init_schema(self):
         self.conn.execute(
@@ -63,7 +72,7 @@ class AuditStore:
     def to_dataframe(self) -> pd.DataFrame:
         return pd.read_sql_query(f"SELECT * FROM {AUDIT_NAME}", self.conn)
 
-    def export_csv(self, path: str):
+    def export_csv(self, path: Path):
         df = self.to_dataframe()
         df.to_csv(path, index=False)
 
@@ -209,9 +218,9 @@ class AuditStore:
 
     def get_ids_by_download_status(self, status: int) -> list:
         cursor = self.conn.execute(
-            """
+            f"""
             SELECT file_id
-            FROM audit
+            FROM {AUDIT_NAME}
             WHERE download_status = ?
             """, (status,)
         )

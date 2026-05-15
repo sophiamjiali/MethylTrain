@@ -24,7 +24,7 @@ from methyltrain.project.qc import quality_control
 from methyltrain.project.preprocess import preprocess
 
 
-def prepare_project(config: Dict) -> ad.AnnData:
+def prepare_project(config: Dict, ) -> ad.AnnData:
     """
     Upper-level orchestration API for the full project pipeline. Downloads and 
     preprocesses DNA Methylation data for the project specified in the 
@@ -50,9 +50,6 @@ def prepare_project(config: Dict) -> ad.AnnData:
     layout.initialize()
     layout.validate()
 
-    # Initialize the AuditStore for download status logging
-    audit = AuditStore(layout.audit_store.with_suffix(".db")) 
-
     # Initialize a logger to capture verbose output
     logger = configure_logger(level = logging.INFO)
 
@@ -65,48 +62,48 @@ def prepare_project(config: Dict) -> ad.AnnData:
     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     logger.info("-----| Beginning Pipeline |-----\n")
 
-    # ~~~~~| 1. Download and Clean Data |~~~~~
+    # Initialize the AuditStore for download status logging
+    success = False
+    with AuditStore(layout.audit_store.with_suffix(".db")) as audit:
+        try:
+            # ~~~~~| 1. Download and Clean Data |~~~~~
+            manifest, download_report = download_methylation(config, layout)
+            audit.initialize(manifest.index.tolist())
+            audit.apply_download_report(download_report)
 
-    # Download and clean the raw DNA Methylation data and metadata
-    manifest, download_report = download_methylation(config, layout)
-    metadata, metadata_report, biospec_report = prepare_metadata(config, audit)
-    clean_data(layout, audit)
+            metadata, meta_report, bio_report = prepare_metadata(config, audit)
+            audit.apply_metadata_report(meta_report)
+            audit.apply_biospecimen_report(bio_report)
+            clean_data(layout, audit)
 
-    # Load the raw data into a CpG matrix
-    adata = load_raw_project(config, layout)
+            adata = load_raw_project(config, layout)
 
-    # ~~~~~| 2. Quality Control |~~~~~
-    adata, qc_report = quality_control(adata, config, layout)
+            # ~~~~~| 2. Quality Control |~~~~~
+            adata, qc_report = quality_control(adata, config, layout)
+            audit.apply_qc_report(qc_report)
 
-    # ~~~~~| 3. Preprocessing |~~~~~
-    adata = preprocess(adata, config)
+            # ~~~~~| 3. Preprocessing |~~~~~
+            adata = preprocess(adata, config)
 
-    # ~~~~~| 4. I/O |~~~~~
+            # ~~~~~| 4. I/O |~~~~~
 
-    # Save all metadata to CSV files as specified in the layout
-    save_manifest(manifest, layout)
-    save_metadata(metadata, layout)
+            # Save all metadata to CSV files as specified in the layout
+            save_manifest(manifest, layout)
+            save_metadata(metadata, layout)
 
-    # ~~~~~| 5. Auditing |~~~~~
-    audit.initialize(manifest.index.tolist())
-    audit.apply_download_report(download_report)
-    audit.apply_metadata_report(metadata_report)
-    audit.apply_biospecimen_report(biospec_report)
-    audit.apply_qc_report(qc_report)
+            # ~~~~~| 5. Cleanup |~~~~~
 
-    # Export the AuditStore object to a CSV file
+            # Optionally remove all raw data
+            if config.get('clean_raw_data', False):
+                for file in layout.raw_dir.glob("*.parquet"): file.unlink()
+                logger.info("Successfully cleaned all raw data.")
 
+            logger.info("=====================================================")
+            success = True
 
-    # ~~~~~| 5. Cleanup |~~~~~
+            return adata
 
-    # Optionally remove all raw data; processed data and metadata persist
-    if config.get('clean_raw_data', False):
-        for file in layout.raw_dir.glob("*.parquet"): file.unlink()
-        logger.info("Successfully cleaned all raw data.")
-
-
-    logger.info("=====================================================")
-
-    return adata
+        finally:
+            if success: audit.export_csv(layout.audit_store)
 
 # [END]

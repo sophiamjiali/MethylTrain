@@ -1,5 +1,7 @@
 # =====| Project Details |======================================================
 
+version: 0.1.0
+
 # Toggle for automatically deleting raw data after the pipeline has finished
 clean_raw_data: True
 

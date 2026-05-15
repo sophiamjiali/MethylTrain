@@ -6,7 +6,7 @@ version: 0.1.0
 clean_raw_data: True
 
 project:
-  id: TCGA-XXXX
+  id: TCGA-THCA
   reference_genome: GRCh38
   seed: 42
 
@@ -53,10 +53,10 @@ quality_control:
     missing_threshold: 0.20
     outlier_threshold: 1.5
   probe_qc:
-    remove_cross_reactive: true
-    remove_SNP_associated: true
-    remove_sex_chromosome: true
-    remove_multi_mapped: true
+    remove_cross_reactive: True
+    remove_SNP_associated: True
+    remove_sex_chromosome: True
+    remove_multi_mapped: True
     missing_threshold: 0.05
 
 preprocessing:

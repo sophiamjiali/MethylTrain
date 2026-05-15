@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # =====| Public API |===========================================================
 
-def clean_data(layout: ProjectLayout, audit: AuditStore) -> None:
+def clean_data(layout: ProjectLayout, audit: AuditStore) -> list[dict]:
     """
     Cleans raw TCGA DNA methylation beta value .txt files by converting them 
     to .parquet, flattening directory structure and removing accessory files 
@@ -35,6 +35,11 @@ def clean_data(layout: ProjectLayout, audit: AuditStore) -> None:
         Metadata for downloading and preprocessing fidelity of the project.
     layout : ProjectLayout
         Object representing a project dataset directory layout.
+
+    Returns
+    -------
+    list[dict]
+        A cleaning report for auditing.
     """
 
     # Verify the raw data directory exists
@@ -46,6 +51,7 @@ def clean_data(layout: ProjectLayout, audit: AuditStore) -> None:
     audit_cols = ("file_id", "file_name", "raw_data_path")
     downloaded = audit.get_files_by_download_status(1, audit_cols)
 
+    report = []
     for file_id, file_name, raw_data_path in downloaded:
         if raw_data_path is not None: continue
 
@@ -60,11 +66,11 @@ def clean_data(layout: ProjectLayout, audit: AuditStore) -> None:
         _remove_raw_artifact(txt_path)
         
         # Update the AuditStore with the parquet path
-        audit.set_raw_path(file_id, str(parquet_path))
+        report.append({'file_id': file_id, 'raw_data_path': parquet_path})
 
     logger.info("=====| Successfully Cleaned Raw Data |=====")
 
-    return
+    return report
 
 # =====| Internal Helpers |=====================================================
 

@@ -19,7 +19,7 @@ from typing import Dict
 
 from methyltrain.audit.audit_store import AuditStore
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.old_constants import GDC_QUERY_URL, MAX_RETRIES
+from methyltrain.constants.paths import GDC_QUERY_URL
 from methyltrain.utils.utils import verify_gdc_client
 
 logger = logging.getLogger(__name__)
@@ -223,7 +223,7 @@ def _download_methylation(manifest: pd.DataFrame,
     tmp_manifest = layout.raw_dir / "temp_manifest.txt"
 
     attempt = 0
-    while not remaining_files.empty and attempt < MAX_RETRIES:
+    while not remaining_files.empty and attempt < 5:
         attempt += 1
 
         # Save a temporary manifest

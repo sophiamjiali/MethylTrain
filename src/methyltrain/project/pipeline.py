@@ -74,7 +74,9 @@ def prepare_project(config: Dict, ) -> ad.AnnData:
             metadata, meta_report, bio_report = prepare_metadata(config, audit)
             audit.apply_metadata_report(meta_report)
             audit.apply_biospecimen_report(bio_report)
-            clean_data(layout, audit)
+
+            cleaning_report = clean_data(layout, audit)
+            audit.apply_cleaning_report(cleaning_report)
 
             adata = load_raw_project(config, layout)
 

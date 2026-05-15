@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from methyltrain.project.layout import ProjectLayout
 from methyltrain.cohort.layout import CohortLayout
-from methyltrain.io.read import _load_metadata, _load_sample
+from methyltrain.io.read import load_metadata, _load_sample
 
 logger = logging.getLogger(__name__)
 
@@ -75,18 +75,23 @@ def load_raw_project(config: dict, layout: ProjectLayout):
     )
 
     # Initialize global metadata for the project
-    adata.uns['project_id'] = layout.project_name
-    adata.uns['platform'] = config.get('download', {}).get('platform', '')
-    adata.uns['reference_genome'] = config.get('reference_genome', '')
-    adata.uns['level'] = "project"
-    adata.uns['data_type'] = "cpg_matrix"
-    adata.uns['conversion'] = 'beta_value'
-    adata.uns['state'] = "raw"
-    adata.uns['preprocessing_steps'] = []
-
-    # Default train-val-test split metadata to NA
-    adata.uns['split'] = None
-    adata.uns['split_percentage'] = None
+    adata.uns = {
+        "provenance": {
+            "project_id": layout.project_name,
+            "data_type": "cpg_matrix",
+            "conversion": "beta_value",
+            "pipeline_verson": config.get('version'),
+        },
+        "data_source": {
+            "platform": config.get("download", {}).get("platform"),
+            "reference_genome": config.get("reference_genome"),
+        },
+        "pipeline": {
+            "level": "project",
+            "state": "raw",
+            "steps": [],
+        },
+    }
     
     return adata
 
@@ -170,7 +175,7 @@ def _build_metadata(layout: ProjectLayout) -> pd.DataFrame:
     """
     Loads the project's metadata, aligning it with the raw beta value matrix.
     """
-    metadata = _load_metadata(layout)
+    metadata = load_metadata(layout)
     metadata = metadata.sort_values(by = 'file_name')
     metadata = metadata.loc[metadata['status'] == 'success']
 

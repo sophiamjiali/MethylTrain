@@ -21,6 +21,7 @@ class AuditStore:
     # ~~~~~| I/O of Schema |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def __init__(self, db_path):
         self.conn = sqlite3.connect(db_path)
+        self.conn.row_factory = sqlite3.Row
         self._init_schema()
 
     def _init_schema(self):
@@ -33,7 +34,7 @@ class AuditStore:
                 download_status INTEGER DEFAULT 0,
                 metadata_status INTEGER DEFAULT 0,
                 biospecimen_status INTEGER DEFAULT 0,
-                qc_status INTEGER DEFAULT 0,
+                qc_pass INTEGER DEFAULT 0,
 
                 download_timestamp TEXT,
                 metadata_timestamp TEXT,
@@ -75,65 +76,113 @@ class AuditStore:
 
     # ~~~~~| Pipeline Status Updates |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def set_download_status(self, file_id: str, file_name: str, status: int):
-        self.conn.execute(
-            f"""
-            UPDATE {AUDIT_NAME}
-            SET file_name = ?,
-                download_status = ?,
-                download_timestamp = ?,
-                updated_at = ?
-            WHERE file_id = ?
-            """, (file_name, status, self._now(), self._now(), file_id)
-        )
-        self.conn.commit()
+    def apply_download_report(self, report: list[dict]):
+        """
+        Updates the AuditStore with the DNA Methylation data download report.
+        """
+        self._apply_report('download', report)
+        rows = [{
+            'file_id': r['file_id'],
+            'file_name': r.get('file_name')
+        } for r in report]
 
-    def set_metadata_status(self, file_id: str, status: int):
-        self.conn.execute(
-            f"""
-            UPDATE {AUDIT_NAME}
-            SET metadata_status = ?,
-                metadata_timestamp = ?,
-                updated_at = ?
-            WHERE file_id = ?
-            """, (status, self._now(), self._now(), file_id)
-        )
-        self.conn.commit()
+        with self.conn:
+            self.conn.executemany(
+                f"""
+                UPDATE {AUDIT_NAME}
+                SET file_name = :file_name
+                WHERE file_id = :file_id
+                """, rows
+            )
+        return
+    
+    def apply_metadata_report(self, report: list[dict]):
+        """
+        Updates the AuditStore with the metadata download report.
+        """
+        self._apply_report('metadata', report)
+        return
+    
 
-    def set_biospecimen_status(self, file_id: str, status: int):
-        self.conn.execute(
-            f"""
-            UPDATE {AUDIT_NAME}
-            SET biospecimen_status = ?,
-                biospecimen_timestamp = ?,
-                updated_at = ?
-            WHERE file_id = ?
-            """, (status, self._now(), self._now(), file_id)
-        )
-        self.conn.commit()
+    def apply_biospecimen_report(self, report: list[dict]):
+        """
+        Updates the AuditStore with the metadata download report.
+        """
+        self._apply_report('biospecimen', report)
+        return
+    
 
-    def set_qc_status(self, file_id: str, status: int):
-        self.conn.execute(
-            f"""
-            UPDATE {AUDIT_NAME}
-            SET qc_status = ?,
-                qc_timestamp = ?,
-                updated_at = ?
-            WHERE file_id = ?
-            """, (status, self._now(), self._now(), file_id)
-        )
-        self.conn.commit()
+    def apply_cleaning_report(self, report: list[dict]):
+        """
+        Updates the AuditStore with the cleaning download report.
+        """
+        now = self._now()
+        rows = [{
+            'file_id': r['file_id'],
+            'raw_data_path': r['raw_data_path'],
+            'updated_at': now,
+        } for r in report]
 
-    def set_raw_path(self, file_id: str, path: str):
-        self.conn.execute(
-            f"""
-            UPDATE {AUDIT_NAME}
-            SET raw_data_path = ?,
-                updated_at = ?
-            WHERE file_id = ?
-            """, (path, self._now(), file_id)
-        )
-        self.conn.commit()
+        with self.conn:
+            self.conn.executemany(
+                f"""
+                UPDATE {AUDIT_NAME}
+                SET raw_data_path = :raw_data_path,
+                    updated_at = :updated_at
+                WHERE file_id = :file_id
+                """, rows
+            )
+        return
+    
+    def apply_qc_report(self, report: list[dict]):
+        """
+        Updates the AuditStore with the quality control report.
+        """
+        now = self._now()
+        rows = [{
+            'file_id': r['file_id'],
+            'qc_pass': r['qc_pass'],
+            'timestamp': now,
+            'updated_at': now,
+        } for r in report]
+
+        with self.conn:
+            self.conn.executemany(
+                f"""
+                UPDATE {AUDIT_NAME}
+                SET qc_pass = :qc_pass,
+                    qc_timestamp = :timestamp,
+                    updated_at = :updated_at
+                WHERE file_id = :file_id
+                """, rows
+            )
+        return
+        
+
+    def _apply_report(self, report_type: str, report: list[dict]):
+        """
+        Generic Helper for updating the AuditStore with a report.
+        """
+        now = self._now()
+        rows = [{
+            'file_id': r['file_id'],
+            'status': r[f'{report_type}_status'],
+            'timestamp': now,
+            'updated_at': now,
+        } for r in report]
+
+        with self.conn:
+            self.conn.executemany(
+                f"""
+                UPDATE {AUDIT_NAME}
+                SET {report_type}_status = :status,
+                    {report_type}_timestamp = :timestamp,
+                    updated_at = :updated_at
+                WHERE file_id = :file_id
+                """, rows
+            )
+        return
+
 
     # ~~~~~| Getters |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

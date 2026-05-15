@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 # =====| Public API |===========================================================
 
 def download_methylation(config: Dict, 
-                         layout: ProjectLayout, 
-                         audit: AuditStore) -> pd.DataFrame:
+                         layout: ProjectLayout
+                        ) -> tuple[pd.DataFrame, list[dict]]:
     """
     Downloads DNA methylation data of a TCGA project as beta values from the 
     TCGA GDC based on the project specified in the provided configuration 
@@ -43,16 +43,14 @@ def download_methylation(config: Dict,
     ----------
     config : dict
         Configuration dictionary controlling workflow steps.
-    audit: AuditStore
-        Metadata for downloading and preprocessing fidelity of the project.
     layout : ProjectLayout
         Object representing a project dataset directory layout.
 
     Returns
     -------
-    pd.DataFrame
+    tuple[pd.DataFrame, list[dict]]
         The manifest returned by the GDC API used to dowload the project's DNA 
-        Methylation Data.
+        Methylation Data. A download fidelity report for auditing.
     """
 
     layout.validate()
@@ -63,16 +61,15 @@ def download_methylation(config: Dict,
     manifest = _build_manifest(config)
     logger.info("Successfully queried for the manifest.")
 
-    # Initialize the AuditStore with queried file_id
-    audit.initialize(manifest.index.tolist())
-    logger.info("Successfully initialized the audit store.")
-
     # Download the methylation data and update the audit store
-    _download_methylation(manifest, audit, config, layout)
+    _download_methylation(manifest, config, layout)
     logger.info("Successfully downloaded methylation data.")
 
+    # Compute the download report for auditing
+    download_report = _compute_download_report(manifest, layout)
+
     logger.info("~~~~~| Successfully Downloaded Methylation Data |~~~~~\n")
-    return manifest
+    return manifest, download_report
 
 
 # =====| Internal Helpers |=====================================================
@@ -174,7 +171,6 @@ def _build_manifest(config: Dict) -> pd.DataFrame:
 
 
 def _download_methylation(manifest: pd.DataFrame, 
-                          audit: AuditStore,
                           config: Dict,
                           layout: ProjectLayout) -> None:
     """
@@ -196,12 +192,15 @@ def _download_methylation(manifest: pd.DataFrame,
         Prevalidated manifest that is filtered for the desired platform, 
         reference genome, sample type, and data category. Each row corresponds 
         to a unique sample.
-    audit : AuditStore
-        SQL Audit store for logging download status and fidelity.
     config : dict
         Configuration dictionary controlling workflow steps.
     layout : ProjectLayout
         Object representing a project dataset directory layout.
+
+    Returns
+    -------
+    list[dict]
+        A download fidelity report for auditing.
     """
 
     # Verify the `gdc-client` is properly installed on the user's device
@@ -264,15 +263,29 @@ def _download_methylation(manifest: pd.DataFrame,
 
     # Delete the temporary manifest
     if tmp_manifest.exists(): tmp_manifest.unlink()
-
-    # Log the download status of all files in the audit store
-    for idx, row in manifest.iterrows():
-        filepath = layout.raw_dir / str(idx) / row['file_name']
-        status = 1 if filepath.exists() else 0
-        file_name = row.get('file_name', '')
-
-        audit.set_download_status(str(idx), file_name, status)
-
     return
+
+
+def _compute_download_report(manifest: pd.DataFrame, 
+                             layout: ProjectLayout) -> list:
+    """
+    Computes and returns a list containing the auditing report for each file 
+    download status. This is later used to update the AuditStore in the public 
+    APIs.
+    """
+
+    report = []
+
+    for file_id, row in manifest.iterrows():
+        filepath = layout.raw_dir / str(file_id) / row['file_name']
+        status = 1 if filepath.exists() else 0
+
+        report.append({
+            "file_id": str(file_id),
+            "file_name": row.get("file_name", ""),
+            "download_status": status,
+        })
+
+    return report
 
 # [END]

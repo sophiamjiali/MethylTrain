@@ -43,7 +43,7 @@ preprocessing:
 
   "batch_correction":
       "batch_key": "batch_id"
-      "covariates": ["project_id"]    # Synonymous with CancerType
+      "covariates": []    # Synonymous with CancerType
 
   "gene_aggregation": ["TSS200", "TSS1500"]    # TSS200, TSS1500, gene_body
 

@@ -7,15 +7,18 @@
 # ==============================================================================
 
 import copy
+import logging
 
 import anndata as ad
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from typing import List, Dict
 
 from methyltrain.cohort.layout import CohortLayout
 from methyltrain.constants.annotation import PLATFORM_PRIORITY
+
+logger = logging.getLogger(__name__)
 
 # =====| Public API |===========================================================
 
@@ -45,6 +48,10 @@ def aggregate_cohort(projects: List[ad.AnnData],
     ad.AnnData
         Aggregated cohort AnnData object at the CpG probe x sample level.
     """
+
+    layout.validate()
+
+    logger.info("=====| Attempting Cohort Aggregation |=====")
     
     # Concatenate all projects together, keeping the common set of probes
     cohort = ad.concat(
@@ -56,12 +63,15 @@ def aggregate_cohort(projects: List[ad.AnnData],
 
     # Assert that all projects are the same conversion (beta or M-values)
     conversion = _fetch_conversion(projects)
+    logger.info("Successfully fetched project conversion types.")
 
     # Set the array type for annotation as the highest resolution available
     platform = _fetch_highest_resolution(projects)
+    logger.info("Successfully fetched the highest array type resolution.")
 
     # Fetch the reference genome of all the projects
     reference_genome = _fetch_reference_genome(projects)
+    logger.info("Successfully fetched all projects' reference genome.")
 
     # Initialize the cohort metadata, initializing the projects nested dict.
     cohort.uns = {
@@ -86,6 +96,79 @@ def aggregate_cohort(projects: List[ad.AnnData],
             'steps': ['aggregation']
         }
     }
+
+    logger.info("Successfully initialized the cohort metadata.")
+    logger.info("=====| Successfully Aggregated the Cohort |=====")
+
+    return cohort
+
+
+def aggregate_genes(cohort: ad.AnnData, 
+                    annotation: pd.DataFrame,
+                    config: Dict) -> ad.AnnData:
+    """
+    Aggregates a project or cohort AnnData object at the CpG probe x sample 
+    matrix level to the gene-level. Regions are used to select probes that 
+    contribute, but the final matrix has only genes as columns.
+
+    Parameters
+    ----------
+    adata : ad.AnnData
+        Probe-level DNA methylation AnnData (probes x samples).
+    annotation : pd.DataFrame
+        Simplified annotation table with the following columns:
+        - 'probe_id'
+        - 'gene_symbol'
+        - 'TSS200', 'TSS1500', 'gene_body' (bool)
+    config : dict
+        Configuration dictionary controlling workflow steps.
+
+    Returns
+    -------
+    adata : ad.AnnData
+        Aggregated AnnData object to the gene-level.
+    """
+
+    # Fetch the regions to aggregate (TSS200, TS1500, gene body)
+    regions = config.get('preprocessing', {}).get('gene_aggregation', [])
+
+    # Align annotations to the AnnData probes
+    annotation = annotation.set_index("probe_id").loc[cohort.var_names]
+    
+    # Flag probes if they are in the contributing regions list
+    annotation['keep'] = annotation[regions].any(axis = 1)
+    annotation = annotation[annotation['keep']]
+
+    cpg_matrix = pd.DataFrame(
+        np.array(cohort.X), 
+        index = cohort.obs_names, 
+        columns = cohort.var_names
+    )
+
+    # Explode multi-gene probes
+    annotation['gene_symbol'] = annotation['gene_symbol'].str.split(';')
+    annotation = (annotation.explode('gene_symbol')
+                  .dropna(subset = ['gene_symbol']))
+    
+    cpg_matrix = cpg_matrix[annotation.index]
+    cpg_matrix.columns = annotation['gene_symbol'].values
+    
+    # Aggregate by gene: take the mean across all probes per gene
+    gene_matrix = cpg_matrix.T.groupby(level = 0).mean().T
+    
+
+    # Update the AnnData object in-place
+    cohort.X = gene_matrix.values
+    cohort.var = pd.DataFrame(index = gene_matrix.columns)
+
+    cohort.uns['pipeline']['state'] = 'processed'
+    cohort.uns['pipeline']['steps'].append("gene_aggregation")
+    cohort.uns['provenance']['data_type'] = 'gene_matrix'
+    cohort.uns['gene_aggregation'] = {
+        'regions': regions
+    }
+
+    return cohort
 
 
 # =====| Internal Helpers |=====================================================

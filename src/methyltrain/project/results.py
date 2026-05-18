@@ -1,5 +1,5 @@
 # ==============================================================================
-# Script:           results.py
+# Script:           project/results.py
 # Purpose:          Class definition for a dataset processing output
 # Author:           Sophia Li
 # Affiliation:      CCG Lab, Princess Margaret Cancer Center, UHN, UofT
@@ -9,8 +9,6 @@
 import anndata as ad
 import pandas as pd
 
-from methyltrain.audit.audit_store import AuditStore
-
 class ProjectResult:
     """
     Encapsulates the outputs of the full project processing pipeline. This 
@@ -19,6 +17,22 @@ class ProjectResult:
 
     Attributes
     ----------
+    adata : ad.AnnData
+        Full processed project .h5ad AnnData object.
+    manifest : pd.DataFrame
+        Manifest returned from the GDC API query.
+    metadata : pd.DataFrame
+        Metadata returned from teh GDC API query.
+    download_report : list[dict]
+        Download fidelity report from the DNA Methylation download.
+    metadata_report : list[dict]
+        Download fidelity report from the metadata download.
+    biospecimen_report : list[dict]
+        Download fidelity report from the biospecimen data download.
+    cleaning_report : list[dict]
+        Cleaning fidelity report from converting raw .txt to .parquet files.
+    qc_report : list[dict]
+        Quality control report from sample-level processing.
     """
 
     def __init__(self,

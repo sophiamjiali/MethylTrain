@@ -14,7 +14,7 @@ import pandas as pd
 from pathlib import Path
 
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.audit.audit_store import AuditStore
+from methyltrain.project.audit_store import AuditStore
 
 logger = logging.getLogger(__name__)
 

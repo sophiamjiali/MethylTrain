@@ -14,7 +14,7 @@ import pandas as pd
 
 from typing import Dict, List
 
-from methyltrain.audit.audit_store import AuditStore
+from methyltrain.project.audit_store import AuditStore
 from methyltrain.constants.paths import GDC_QUERY_URL, GDC_QUERY_BATCH_URL
 from methyltrain.utils.gdc import (
     extract_batch_id,

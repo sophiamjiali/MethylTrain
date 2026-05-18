@@ -12,16 +12,24 @@ import argparse
 from pathlib import Path
 
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.audit.audit_store import AuditStore
+from methyltrain.cohort.layout import CohortLayout
+from methyltrain.project.audit_store import AuditStore
 from methyltrain.utils.logging import configure_logger
 from methyltrain.config.loader import load_config
 from methyltrain.project.pipeline import prepare_project
 from methyltrain.cohort.pipeline import prepare_cohort
-from methyltrain.io.datasets import save_project, save_cohort
 from methyltrain.io.write import save_manifest, save_metadata
+from methyltrain.io.datasets import (
+    save_project, 
+    save_cohort,
+    save_cohort_train,
+    save_cohort_test,
+    save_cohort_val
+)
 
 from methyltrain.constants.paths import DEFAULT_CONFIG_DIR
 
+logger = logging.getLogger(__name__)
 
 # =====| CLI Entry-Point |======================================================
 
@@ -31,8 +39,13 @@ def main():
     config_path = _resolve_config_path(args.command, args.config, args.name)
     config = load_config(config_path)
 
+    configure_logger(level = logging.INFO)
+    logger.info("[Starting MethylTrain]\n")
+
     if args.command == "project": run_project_command(config)
     elif args.command == "cohort": run_cohort_command(config)
+
+    logger.info("\n[Completed MethylTrain]")
 
 
 def run_project_command(config: dict) -> None:
@@ -44,9 +57,7 @@ def run_project_command(config: dict) -> None:
     layout = ProjectLayout.from_config(config)
     layout.initialize()
     layout.validate()
-
-    # Initialize a logger and AuditStore to capture verbose output
-    logger = configure_logger(level = logging.INFO)
+    
     results = prepare_project(config, layout)
 
     # Capture all audit reports and export it as a CSV
@@ -58,18 +69,37 @@ def run_project_command(config: dict) -> None:
     audit.apply_cleaning_report(results.cleaning_report)
     audit.apply_qc_report(results.qc_report)
     audit.export_csv(layout.audit_store)
+    logger.info("Successfully recorded all reports into the Audit.")
 
     # Save all metadata to CSV files as specified in the layout
     save_manifest(results.manifest, layout)
     save_metadata(results.metadata, layout)
     save_project(results.adata, layout)
+    logger.info("Successfully saved all artifacts and metadata.")
+
 
 def run_cohort_command(config: dict) -> None:
     """
     Wraps calling and saving the outputs of the cohort workflow.
     """
 
-    prepare_cohort(config)
+    # Initialize the cohort's default output layout
+    layout = CohortLayout.from_config(config)
+    layout.initialize()
+    layout.validate()
+
+    results = prepare_cohort(config, layout)
+
+    save_cohort(results.cohort_adata, layout)
+    logger.info("Successfully saved the cohort.")
+
+    # Save the train-val-test splits if toggled
+    if config.get('toggles', {}).get('split', True):
+        save_cohort_train(results.train_adata, layout)
+        save_cohort_val(results.val_adata, layout)
+        save_cohort_test(results.test_adata, layout)
+        logger.info("Successfully saved the cohort splits.")
+
 
 # =====| Internal Helpers |=====================================================
 

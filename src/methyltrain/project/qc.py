@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.audit.audit_store import AuditStore
+from methyltrain.project.audit_store import AuditStore
 from methyltrain.io.read import load_annotation
 
 logger = logging.getLogger(__name__)

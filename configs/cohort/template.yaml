@@ -2,11 +2,14 @@
 
 version: 0.1.0
 
-project:
+cohort:
   id: XXXX
   seed: 42
 
-project_dir: "/ddn_exa/campbell/sli/methyltrain/data/processed/"
+paths:
+  output_dir: /output
+  project_dir: "/ddn_exa/campbell/sli/methyltrain/data/processed/"
+  
 project_list: [
   "TCGA-BLCA",
   "TCGA-BRCA",
@@ -30,7 +33,8 @@ project_list: [
     "MAD_probe_filtering": True
     "batch_correction":    False
     "gene_aggregation":    False
-    "clip_and_scale":      True
+    "winsorize":           True
+    "scale":               True
     "split":               True
 
 preprocessing:

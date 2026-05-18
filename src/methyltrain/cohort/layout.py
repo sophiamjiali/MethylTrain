@@ -56,13 +56,15 @@ class CohortLayout:
 
     def __init__(self, 
                  cohort_name: str,
-                 project_list: List[str], 
-                 cohort_dir: str):
+                 project_dir: str,
+                 cohort_dir: str,
+                 project_list: List[str]):
         
         self.cohort_name = cohort_name
         self.project_list = [Path(p) for p in project_list]
 
         # Initialize directory structure
+        self.project_list = Path(project_dir)
         self.cohort_dir = Path(cohort_dir)
         
         # Define output object destinations
@@ -76,17 +78,20 @@ class CohortLayout:
         self.file_paths = [self.cohort_adata, self.train_adata, 
                            self.val_adata, self.test_adata]
 
+
     @classmethod
     def from_config(cls, config):
-        cohort_id = config.get('cohort_id', '')
+        cohort_id = config.get('cohort', {}).get('id', '')
+        project_dir = config.get('paths', {}).get('project_dir', '')
         root = (
             Path(config.get('paths', {}).get('output_dir', ''))
             / "cohorts"
             / cohort_id
         )
         project_list = config.get('project_list', [])
-        return cls(cohort_id, project_list, root)
+        return cls(cohort_id, project_dir, root, project_list)
     
+
     def initialize(self):
         for d in self.dir_paths: d.mkdir(parents = True, exist_ok = True)
         for p in self.file_paths: p.parent.mkdir(parents = True, exist_ok=True)

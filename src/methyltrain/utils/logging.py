@@ -9,29 +9,19 @@
 import logging
 import sys
 
-def configure_logger(name: str = "methyltrain", 
-                     level: int = logging.INFO) -> logging.Logger:
+def configure_logger(level: int = logging.INFO) -> None:
     """
     Configure and return a package-level logger to capture and record pipeline 
     verbose output.
     """
 
-    logger = logging.getLogger(name)
-    if logger.handlers: return logger
-
-    logger.setLevel(level)
-
-    handler = logging.StreamHandler(sys.stdout)
-    logger.addHandler(handler)
-
-    formatter = logging.Formatter(
-        fmt = "[%(asctime)s] %(levelname)s - %(message)s",
-        datefmt = "%Y-%m-%d %H:%M:%S"
+    logging.basicConfig(
+        level=level,
+        stream=sys.stdout,
+        format="[%(asctime)s] %(levelname)s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
     )
-    handler.setFormatter(formatter)
+    return
 
-    logger.propagate = False
-    return logger
-    
-
-
+# [END]

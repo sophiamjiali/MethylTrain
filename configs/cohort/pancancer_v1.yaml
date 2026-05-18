@@ -2,7 +2,7 @@
 
 version: 0.1.0
 
-project:
+cohort:
   id: pancancer_v1
   seed: 42
 

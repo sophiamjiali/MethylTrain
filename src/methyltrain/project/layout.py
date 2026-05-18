@@ -71,7 +71,7 @@ class ProjectLayout:
 
     @classmethod
     def from_config(cls, config):
-        project_id = config.get('project_id', '')
+        project_id = config.get('project', {}).get('id', '')
         root = (
             Path(config.get('paths', {}).get('output_dir', ''))
             / "projects"

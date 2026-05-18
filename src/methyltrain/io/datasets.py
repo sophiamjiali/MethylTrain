@@ -11,6 +11,7 @@ import logging
 import pandas as pd
 import anndata as ad
 
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 from methyltrain.project.layout import ProjectLayout
@@ -78,22 +79,48 @@ def load_raw_project(config: dict, layout: ProjectLayout):
     adata.uns = {
         "provenance": {
             "project_id": layout.project_name,
+            'level': 'project',
             "data_type": "cpg_matrix",
             "conversion": "beta_value",
-            "pipeline_verson": config.get('version'),
+            "pipeline_verson": config['version'],
         },
         "data_source": {
             "platform": config.get("download", {}).get("platform"),
             "reference_genome": config.get("reference_genome"),
         },
         "pipeline": {
-            "level": "project",
             "state": "raw",
             "steps": [],
         },
     }
     
     return adata
+
+def load_processed_project(path: str) -> ad.AnnData:
+    """
+    Loads a processed project AnnData object.
+
+    Parameters
+    ----------
+    processed_file : Path or str
+        Full path to the processed .h5ad file.
+
+    Returns
+    -------
+    ad.AnnData
+        The loaded processed dataset.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the processed file path does not exist.
+    """
+    processed_file = Path(path)
+
+    if not processed_file.exists():
+        raise FileNotFoundError(f"Processed file not found: {processed_file}")
+    return ad.read_h5ad(processed_file)
+
 
 # ~~~~~| Saving |~~~~~
 def save_project(adata: ad.AnnData, layout: ProjectLayout) -> None:
@@ -134,6 +161,18 @@ def save_cohort(adata: ad.AnnData, layout: CohortLayout):
     layout.validate()
     adata.write_h5ad(layout.cohort_adata, compression = "gzip")
     return
+
+def save_cohort_train(adata: ad.AnnData, layout: CohortLayout):
+    layout.validate()
+    adata.write_h5ad(layout.train_adata, compression = "gzip")
+
+def save_cohort_val(adata: ad.AnnData, layout: CohortLayout):
+    layout.validate()
+    adata.write_h5ad(layout.val_adata, compression = "gzip")
+
+def save_cohort_test(adata: ad.AnnData, layout: CohortLayout):
+    layout.validate()
+    adata.write_h5ad(layout.test_adata, compression = "gzip")
 
 
 # =====| Internal Helpers |=====================================================

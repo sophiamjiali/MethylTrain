@@ -8,9 +8,6 @@
 
 import logging
 
-import anndata as ad
-from typing import Dict
-
 from methyltrain.project.layout import ProjectLayout
 from methyltrain.project.results import ProjectResult
 from methyltrain.io.datasets import load_raw_project
@@ -23,7 +20,7 @@ from methyltrain.project.preprocess import preprocess
 logger = logging.getLogger(__name__)
 
 
-def prepare_project(config: Dict, layout: ProjectLayout) -> ProjectResult:
+def prepare_project(config: dict, layout: ProjectLayout) -> ProjectResult:
     """
     Upper-level orchestration API for the full project pipeline. Downloads and 
     preprocesses DNA Methylation data for the project specified in the 

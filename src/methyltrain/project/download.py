@@ -17,7 +17,7 @@ import pandas as pd
 
 from typing import Dict
 
-from methyltrain.audit.audit_store import AuditStore
+from methyltrain.project.audit_store import AuditStore
 from methyltrain.project.layout import ProjectLayout
 from methyltrain.constants.paths import GDC_QUERY_URL
 from methyltrain.utils.gdc import verify_gdc_client

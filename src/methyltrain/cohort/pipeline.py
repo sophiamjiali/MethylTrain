@@ -10,13 +10,15 @@ import logging
 
 from methyltrain.cohort.layout import CohortLayout
 from methyltrain.cohort.results import CohortResult
-from methyltrain.io.read import load_annotation
-from methyltrain.io.datasets import load_processed_project
-from methyltrain.cohort.aggregation import aggregate_cohort, aggregate_genes
-from methyltrain.cohort.filtering import mad_probe_filtering
-from methyltrain.cohort.correction import batch_correction
+from methyltrain.cohort.construction import define_cohort
+from methyltrain.cohort.alignment import batch_correction
 from methyltrain.cohort.split import split
-from methyltrain.cohort.features import winsorize, scale, extract_probe_set
+from methyltrain.cohort.features import (
+    winsorize, 
+    scale, 
+    extract_probe_set,
+    mad_probe_filtering
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,26 +60,21 @@ def prepare_cohort(config: dict, layout: CohortLayout) -> CohortResult:
     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     logger.info("-----| Beginning Pipeline |-----\n")
 
-    projects = [load_processed_project(path) for path in project_list]
-    cohort = aggregate_cohort(projects, config, layout)
+    # Define the cohort, optionally aggregating to the gene level
+    cohort = define_cohort(project_list, config, layout)
 
-    # Perform MAD probe filtering to reduce probe dimensionality
-    if toggles_cfg.get('MAD_probe_filtering', True):
-        cohort = mad_probe_filtering(cohort, config)
+    # Define the feature space, returning the final probe set
+    cohort, probe_set = define_feature_space(cohort, config)
+
+
+
+
+
+    
     
     # Perform batch effect correction across datasets
     if toggles_cfg.get('batch_correction', True):
         cohort = batch_correction(cohort, config)
-
-    # Aggregate to the gene-level based on TSS200/1500 and/or gene bodies
-    if toggles_cfg.get('gene_aggregation', True):
-
-        # Load the appropriate annotation object
-        annotation = load_annotation(
-            platform = cohort.uns['data_source']['platform'], 
-            reference_genome = cohort.uns['data_source']['reference_genome'], 
-        )
-        cohort = aggregate_genes(cohort, annotation, config)
 
     # Winsorize to increase model training fidelity
     if toggles_cfg.get('winsorize', True):

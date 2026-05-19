@@ -145,6 +145,7 @@ def _filter_variance(adata: ad.AnnData,
 
     adata = adata[keep_mask].copy()
 
+    adata.uns.setdefault('preprocess', {})
     adata.uns['preprocess']['filter_variance'] = {
         'n_total': len(keep_mask),
         'n_pass': int(keep_mask.sum()),
@@ -200,6 +201,7 @@ def _impute(adata: ad.AnnData) -> ad.AnnData:
     adata.var['frac_imputed'] = missing_rate
     adata.var['impute_value'] = col_mean
 
+    adata.uns.setdefault('preprocess', {})
     adata.uns['preprocess']['impute'] = {
         'method': 'mean_probe',
         'total_imputed': n_imputed,
@@ -244,6 +246,7 @@ def _convert_to_mval(adata: ad.AnnData, epsilon: float = 1e-3) -> ad.AnnData:
 
     # Store metadata
     adata.uns['provenance']['conversion'] = 'm_value'
+    adata.uns.setdefault('preprocess', {})
     adata.uns['preprocess']['mval_conversion'] = {
         'method': 'log2it',
         'formula': "log2(beta / (1 - beta))",

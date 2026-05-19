@@ -183,6 +183,7 @@ def _sample_qc(adata: ad.AnnData,
     ]
     adata = adata[pass_any].copy()
 
+    adata.uns.setdefault('qc', {})
     adata.uns['qc']['sample_qc'] = {
         'n_total': len(pass_any),
         'n_pass': int(pass_any.sum()),
@@ -281,6 +282,7 @@ def _probe_qc(adata: ad.AnnData,
 
     adata = adata[pass_qc].copy()
 
+    adata.uns.setdefault('qc', {})
     adata.uns['qc']['probe_qc'] = {
         'n_total': len(pass_qc),
         'n_pass': int(pass_qc.sum()),

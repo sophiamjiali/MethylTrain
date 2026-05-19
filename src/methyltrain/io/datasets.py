@@ -10,6 +10,7 @@ import logging
 
 import pandas as pd
 import anndata as ad
+import numpy as np
 
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -70,9 +71,9 @@ def load_raw_project(config: dict, layout: ProjectLayout):
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     adata = ad.AnnData(
-        X = cpg_matrix.T.values,
+        X = cpg_matrix.T.values.astype(np.float32),
         obs = metadata,
-        var = pd.DataFrame(index = cpg_matrix.index)
+        var = pd.DataFrame(index = cpg_matrix.index.astype(str))
     )
 
     # Initialize global metadata for the project

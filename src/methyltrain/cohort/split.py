@@ -34,35 +34,40 @@ def split(cohort: ad.AnnData,
         The train, validation, and test stratified splits as ad.AnnData objects.
     """
 
-    # revise below
-
+    seed = config.get('cohort', {}).get('seed', 42)
 
     # Ensure obs_names are unique
     if not cohort.obs_names.is_unique:
-        cohort.obs_names = cohort.obs['file_id']
+        cohort.obs_names = cohort.obs['file_id'].astype(str).tolist()
         cohort.obs_names_make_unique()
 
     # Convert obs_names to integer positions for splitting
     all_idx = np.arange(cohort.n_obs)
 
+    # Fetch the splitting ratios and their relative ratio
+    train_ratio, val_ratio, test_ratio = config['split']
+    if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
+        raise ValueError("Split ratios must sum to 1.0.")
+
     # Split into train+validation and test
     train_val_idx, test_idx = train_test_split(
         all_idx,
-        test_size = config.get('split', [])[2],
+        test_size = test_ratio,
         stratify = cohort.obs['project_id'],
-        random_state = config.get('seed', 42),
+        random_state = seed,
         shuffle = True
     )
 
-    # Parse train_val_idx to split again
+    # Parse train_val_idx to split again using the relative proportion
+    val_relative = val_ratio / (train_ratio + val_ratio)
     stratify_array = cohort.obs['project_id'].to_numpy()[train_val_idx]
 
     # Split into train and validation
     train_idx, val_idx = train_test_split(
         train_val_idx,
-        test_size = config.get('split', [])[1],
+        test_size = val_relative,
         stratify = stratify_array,
-        random_state = config.get('seed', 42),
+        random_state = seed,
         shuffle = True
     )
 
@@ -71,20 +76,21 @@ def split(cohort: ad.AnnData,
     val_adata = cohort[val_idx].copy()
     test_adata = cohort[test_idx].copy()
 
-
-
-    # revise below
-
-
-
-
     # Update each AnnData object's global metadata
-    train_adata.uns['split'] = "training"
-    val_adata.uns['split'] = "validation"
-    test_adata.uns['split'] = "test"
-
-    train_adata.uns['split_percentage'] = config.get('split', [])[0]
-    val_adata.uns['split_percentage'] = config.get('split', [])[1]
-    test_adata.uns['split_percentage'] = config.get('split', [])[2]
+    split = config.get('split', [])
+    train_adata = _update_metadata(train_adata, 'training', split[0])
+    val_adata = _update_metadata(val_adata, 'validation', split[1])
+    test_adata = _update_metadata(test_adata, 'testing', split[2])
 
     return train_adata, val_adata, test_adata
+
+
+# =====| Internal Helpers |=====================================================
+
+def _update_metadata(adata: ad.AnnData, split: str, percent: str) -> ad.AnnData:
+    adata.uns['pipeline']['state'] = 'processed'
+    adata.uns['pipeline']['steps'].append('split')
+    adata.uns['split'] = {}
+    adata.uns['split']['type'] = split
+    adata.uns['split']['percentage'] = percent
+    return adata

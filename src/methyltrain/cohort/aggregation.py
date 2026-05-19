@@ -171,7 +171,6 @@ def aggregate_genes(cohort: ad.AnnData,
     return cohort
 
 
-# =====| Internal Helpers |=====================================================
 
 def _fetch_conversion(projects: List[ad.AnnData]) -> str:
     """

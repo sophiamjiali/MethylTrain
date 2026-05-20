@@ -6,7 +6,10 @@ cohort:
   id: pancancer_v1
   seed: 42
 
-project_dir: "/ddn_exa/campbell/sli/methyltrain/data/processed/"
+paths:
+  output_dir: /output
+  project_dir: "/ddn_exa/campbell/sli/methyltrain/data/processed/"
+  
 project_list: [
   "TCGA-BLCA",
   "TCGA-BRCA",
@@ -28,9 +31,10 @@ project_list: [
 
 "toggles":
     "MAD_probe_filtering": True
-    "batch_correction":    False
+    "batch_correction":    True
     "gene_aggregation":    False
-    "clip_and_scale":      True
+    "winsorize":           True
+    "scale":               True
     "split":               True
 
 preprocessing:
@@ -39,10 +43,12 @@ preprocessing:
 
   "batch_correction":
       "batch_key": "batch_id"
-      "covariates": ["project_id"]    # Synonymous with CancerType
+      "covariates": []    # Synonymous with CancerType
 
   "gene_aggregation": ["TSS200", "TSS1500"]    # TSS200, TSS1500, gene_body
 
-  "clip_and_scale": [0.01, 0.99]       # For winsorization
+  "winsorization": 
+    "lower": 0.01
+    "upper": 0.99
 
   "split": [0.60, 0.20, 0.20]

@@ -163,17 +163,20 @@ def save_cohort(adata: ad.AnnData, layout: CohortLayout):
     adata.write_h5ad(layout.cohort_adata, compression = "gzip")
     return
 
-def save_cohort_train(adata: ad.AnnData, layout: CohortLayout):
+def save_cohort_train(adata: ad.AnnData | None, layout: CohortLayout):
     layout.validate()
-    adata.write_h5ad(layout.train_adata, compression = "gzip")
+    if adata is not None: 
+        adata.write_h5ad(layout.train_adata, compression = "gzip")
 
-def save_cohort_val(adata: ad.AnnData, layout: CohortLayout):
+def save_cohort_val(adata: ad.AnnData | None, layout: CohortLayout):
     layout.validate()
-    adata.write_h5ad(layout.val_adata, compression = "gzip")
+    if adata is not None: 
+        adata.write_h5ad(layout.val_adata, compression = "gzip")
 
-def save_cohort_test(adata: ad.AnnData, layout: CohortLayout):
+def save_cohort_test(adata: ad.AnnData | None, layout: CohortLayout):
     layout.validate()
-    adata.write_h5ad(layout.test_adata, compression = "gzip")
+    if adata is not None: 
+        adata.write_h5ad(layout.test_adata, compression = "gzip")
 
 
 # =====| Internal Helpers |=====================================================

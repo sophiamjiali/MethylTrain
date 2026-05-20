@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List, Tuple
 from pathlib import Path
 
-from ..project.download import (
+from ...project.download import (
     build_manifest, 
     build_biospecimen,
     build_metadata,
@@ -34,7 +34,7 @@ from ..pipeline.audit import (
     initialize_audit_table,
     update_metadata
 )
-from ..utils.load_utils import (
+from ...utils import (
     load_metadata, 
     save_metadata,
     save_audit_table,
@@ -44,7 +44,7 @@ from ..utils.load_utils import (
 from ..pipeline.quality_control import sample_qc, probe_qc
 from ..pipeline.clean import clean_metadata
 from ..pipeline.aggregate import cohort_aggregation, gene_aggregation
-from ..utils.utils import load_sample, load_annotation, extract_batch_id
+from ...utils import load_sample, load_annotation, extract_batch_id
 
 from ..fs.layout import ProjectLayout, CohortLayout
 
@@ -494,7 +494,7 @@ def clip_and_scale(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """
 
     clip_values = config.get('clip_and_scale', [0.01, 0.99])
-    X = adata.X if isinstance(adata.X, np.ndarray) else adata.X.toarray()
+    X = np.asarray(adata.X)
 
     # Perform global winsorization across the full matrix
     lower_val = np.percentile(X, clip_values[0] * 100)

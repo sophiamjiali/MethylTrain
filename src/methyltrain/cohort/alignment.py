@@ -6,13 +6,57 @@
 # Date:             2026-05-13
 # ==============================================================================
 
+import logging
+
 import anndata as ad
 import numpy as np
 
-from typing import Dict
+from typing import Dict, List
 from inmoose.pycombat import pycombat_norm
 
-def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
+logger = logging.getLogger(__name__)
+
+# =====| Internal Helpers |=====================================================
+
+def align_distribution(cohort: ad.AnnData, config: Dict) -> ad.AnnData:
+    """
+    Aligns the distributions of the cohort across projects.
+    
+    Parameters
+    ----------
+    adata : ad.AnnData
+        AnnData object with DNA methylation M-values in .X.
+    config : dict
+        Configuration dictionary controlling workflow steps.
+    
+    Returns
+    -------
+    adata : ad.AnnData
+        AnnData object representing a project's batch-corrected DNA methylation 
+        data at the CpG probe matrix level with updated metadata.
+    """
+
+    logger.info("=====| Attempting to Align Distributions |=====")
+
+    # Perform batch effect correction across datasets
+    if config.get('toggles', {}).get('batch_correction', True):
+
+        # Fetch the batch key and covariates from the configurations
+        batch_cfg = config.get('preprocessing', {}).get('batch_correction', {})
+        batch_key = batch_cfg.get('batch_key', 'batch_id')
+        covariates = batch_cfg.get('covariates', [])
+
+        cohort = _batch_correction(cohort, batch_key, covariates)
+
+    logger.info("=====| Successfully Aligned Distributions |=====")
+    return cohort
+
+
+# =====| Public API |===========================================================
+
+def _batch_correction(adata: ad.AnnData, 
+                      batch_key: str, 
+                      covariates: List[str]) -> ad.AnnData:
     """
     Performs ComBat batch correction on an AnnData object using InMoose's 
     pycombat_norm function. Automatically checks for singleton batches and 
@@ -24,8 +68,10 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     ----------
     adata : ad.AnnData
         AnnData object with DNA methylation M-values in .X.
-    config : dict
-        Configuration dictionary controlling workflow steps.
+    batch_key : str
+        The batch key to use for PyCombat batch correction.
+    covariates : List[str]
+        The covariates to use for PyCombat batch correction.
     
     Returns
     -------
@@ -52,11 +98,6 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     if adata.uns['provenance']['conversion'] != "m_value":
         raise ValueError("Batch correction should be performed on M-values. "
                          "Please convert from beta values to M-values first.")
-    
-    # Ensure batch and covariate columns exist
-    batch_cfg = config.get('preprocessing', {}).get('batch_correction', {})
-    batch_key = batch_cfg.get('batch_key', 'batch_id')
-    covariates = batch_cfg.get('covariates', [])
 
     for col in [batch_key] + covariates:
         if col not in adata.obs.columns: 
@@ -71,7 +112,8 @@ def batch_correction(adata: ad.AnnData, config: Dict) -> ad.AnnData:
 
     adata.uns['pipeline']['state'] = 'processed'
     adata.uns['pipeline']['steps'].append("batch_correction")
-    adata.uns['batch_correction'] = {
+    adata.uns.setdefault('alignment', {})
+    adata.uns['alignment']['batch_correction'] = {
         'method': 'pycombat_norm',
         'batch_key': batch_key,
         'covariates': covariates

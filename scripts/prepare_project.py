@@ -9,10 +9,10 @@
 
 import argparse
 
-from methyltrain.api.prepare import prepare_dataset
+from methyltrain.archive.api.prepare import prepare_dataset
 from methyltrain.config.loader import load_config
 from methyltrain.fs.layout import ProjectLayout
-from methyltrain.api.steps import save_project
+from methyltrain.archive.api.steps import save_project
 from methyltrain.utils.load_utils import save_audit_table
 
 def main():

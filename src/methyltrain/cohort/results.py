@@ -25,7 +25,7 @@ class CohortResult:
         Validation split .h5ad AnnData object of the cohort.
     test_adata : ad.AnnData | None
         Test split .h5ad AnnData object of the cohort.
-    probe_set : pd.Series
+    probe_set : pd.DataFrame
         Final probe set in order from the processed cohort.
     """
 
@@ -34,7 +34,7 @@ class CohortResult:
                  train_adata: ad.AnnData | None,
                  val_adata: ad.AnnData | None,
                  test_adata: ad.AnnData | None,
-                 probe_set: pd.Series):
+                 probe_set: pd.DataFrame):
         
         self.cohort_adata = cohort_adata
         self.train_adata = train_adata

@@ -1,9 +1,8 @@
 # User-added miscellaneous
-data/
+output/
 gdc-client
 .vscode
-logs/
-examples/
+notebooks/
 
 
 # Byte-compiled / optimized / DLL files

@@ -108,7 +108,7 @@ def _build_manifest(config: Dict) -> pd.DataFrame:
     """
 
     dc = config.get('download', {})
-    project_id = config.get('project', {}).get('project_id', '')
+    project_id = config.get('project', {}).get('id', '')
 
     # Initialize query filters based on user configurations and defaults
     filters = {

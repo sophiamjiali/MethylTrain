@@ -10,7 +10,7 @@ import pandas as pd
 import anndata as ad
 
 from ..fs.layout import ProjectLayout
-from ..utils.load_utils import save_metadata, load_metadata
+from ...utils import save_metadata, load_metadata
 
 # =====| Clean Metadata |=======================================================
 

@@ -47,6 +47,8 @@ preprocessing:
 
   "gene_aggregation": ["TSS200", "TSS1500"]    # TSS200, TSS1500, gene_body
 
-  "clip_and_scale": [0.01, 0.99]       # For winsorization
+  "winsorization": 
+    "lower": 0.01
+    "upper": 0.99
 
   "split": [0.60, 0.20, 0.20]

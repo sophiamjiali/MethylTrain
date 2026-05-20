@@ -12,10 +12,10 @@ import os
 
 import anndata as ad
 
-from methyltrain.api.prepare import prepare_cohort
+from methyltrain.archive.api.prepare import prepare_cohort
 from methyltrain.config.loader import load_config
 from methyltrain.fs.layout import CohortLayout
-from methyltrain.api.steps import save_cohort
+from methyltrain.archive.api.steps import save_cohort
 
 def main():
 

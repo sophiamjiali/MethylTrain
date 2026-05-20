@@ -12,7 +12,7 @@ import pandas as pd
 
 from typing import Dict
 
-from ..utils.utils import iqr_bounds
+from ...utils import iqr_bounds
 
 def sample_qc(adata: ad.AnnData, config: Dict) -> ad.AnnData:
     """

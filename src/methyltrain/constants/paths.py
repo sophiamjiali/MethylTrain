@@ -11,7 +11,7 @@ from pathlib import Path
 # =====| Default Paths |========================================================
 
 # Project root directory
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 DEFAULT_CONFIG_DIR = PROJECT_ROOT / "configs"
 
 # Query link for the GDC API for fetching DNA methylation beta values

@@ -11,16 +11,13 @@ import logging
 from methyltrain.cohort.layout import CohortLayout
 from methyltrain.cohort.results import CohortResult
 from methyltrain.cohort.construction import define_cohort
-from methyltrain.cohort.alignment import batch_correction
+from methyltrain.cohort.features import define_feature_space
+from methyltrain.cohort.alignment import align_distribution
+from methyltrain.cohort.normalization import normalize, apply_normalization
 from methyltrain.cohort.split import split
-from methyltrain.cohort.features import (
-    winsorize, 
-    scale, 
-    extract_probe_set,
-    mad_probe_filtering
-)
 
 logger = logging.getLogger(__name__)
+
 
 def prepare_cohort(config: dict, layout: CohortLayout) -> CohortResult:
     """
@@ -66,32 +63,23 @@ def prepare_cohort(config: dict, layout: CohortLayout) -> CohortResult:
     # Define the feature space, returning the final probe set
     cohort, probe_set = define_feature_space(cohort, config)
 
+    # Align the distributions across projects (batch correction)
+    cohort = align_distribution(cohort, config)
 
-
-
-
-    
-    
-    # Perform batch effect correction across datasets
-    if toggles_cfg.get('batch_correction', True):
-        cohort = batch_correction(cohort, config)
-
-    # Winsorize to increase model training fidelity
-    if toggles_cfg.get('winsorize', True):
-        cohort = winsorize(cohort, config)
-
-    # Scale the numerical range to increase model training fidelity
-    if toggles_cfg.get('scale', True):
-        cohort = scale(cohort, config)
-
-    # Split the cohort into train-val-test splits
     if toggles_cfg.get('split', True):
+        
+        # Split the cohort into train-val-test splits (if toggled)
         train, val, test = split(cohort, config)
-    else:
-        train, val, test = None, None, None
 
-    # Extract the final probe set and its order (as the index)
-    probe_set = extract_probe_set(cohort)
+        # Apply normalization (winsorization and scaling)
+        train, norm_state = normalize(train, config)
+        val = apply_normalization(val, norm_state)
+        test = apply_normalization(test, norm_state)
+    else:
+        
+        # Else fit scaling on the full cohort
+        train = val = test = None
+        cohort = normalize(cohort, config)[0]
 
     logger.info("=====================================================")
 

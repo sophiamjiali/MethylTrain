@@ -1,0 +1,54 @@
+# =====| Project Details |======================================================
+
+version: 0.1.0
+
+cohort:
+  id: pancancer_v1
+  seed: 42
+
+paths:
+  output_dir: /Users/sophiali/Desktop/MethylTrain/output
+  project_dir: /Users/sophiali/Desktop/MethylTrain/output/projects
+  
+project_list: [
+  "TCGA-BLCA",
+  "TCGA-BRCA",
+  "TCGA-GBM",
+  "TCGA-HNSC",
+  "TCGA-KIRC",
+  "TCGA-LGG",
+  "TCGA-LIHC",
+  "TCGA-LUAD",
+  "TCGA-LUSC",
+  "TCGA-PAAD",
+  "TCGA-PRAD",
+  "TCGA-SKCM",
+  "TCGA-THCA",
+  "TCGA-UCEC"
+]
+
+# =====| Processing Pipeline |==================================================
+
+"toggles":
+    "MAD_probe_filtering": True
+    "batch_correction":    True
+    "gene_aggregation":    False
+    "winsorize":           True
+    "scale":               True
+    "split":               True
+
+preprocessing:
+
+  "MAD_probe_filtering": 30000
+
+  "batch_correction":
+      "batch_key": "batch_id"
+      "covariates": []    # Synonymous with CancerType
+
+  "gene_aggregation": ["TSS200", "TSS1500"]    # TSS200, TSS1500, gene_body
+
+  "winsorization": 
+    "lower": 0.01
+    "upper": 0.99
+
+  "split": [0.60, 0.20, 0.20]

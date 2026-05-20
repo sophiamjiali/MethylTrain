@@ -11,9 +11,9 @@ project:
   seed: 42
 
 paths:
-  gdc_client: /ddn_exa/campbell/sli/methyltrain/gdc-client
-  output_dir: /output   # Root output directory, parent of projects/ & cohorts/
-
+  gdc_client: /Users/sophiali/Desktop/MethylTrain/gdc-client
+  output_dir: /Users/sophiali/Desktop/MethylTrain/output
+  
 # =====| Download Parameters |==================================================
 
 # Fields to filter the DNA Methylation API data query

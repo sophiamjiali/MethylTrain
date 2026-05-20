@@ -7,8 +7,8 @@ cohort:
   seed: 42
 
 paths:
-  output_dir: /output
-  project_dir: "/ddn_exa/campbell/sli/methyltrain/data/processed/"
+  output_dir: /Users/sophiali/Desktop/MethylTrain/output
+  project_dir: /Users/sophiali/Desktop/MethylTrain/output/projects
   
 project_list: [
   "TCGA-BLCA",

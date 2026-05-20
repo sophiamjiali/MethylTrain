@@ -55,12 +55,15 @@ def prepare_project(config: dict, layout: ProjectLayout) -> ProjectResult:
     manifest, download_report = download_methylation(config, layout)
 
     # Extract the IDs of files who's beta values were downloaded
-    ids = [d['file_id'] for d in download_report 
+    full_ids = [(d['file_id'], d['file_name']) for d in download_report
                 if d.get('download_status') == 1]
+    file_ids = [d[0] for d in full_ids]
 
-    metadata, meta_report, bio_report = prepare_metadata(config, ids)
-    cleaning_report = clean_data(layout, ids)
-    adata = load_raw_project(config, layout)
+    metadata, meta_report, bio_report = prepare_metadata(config, file_ids)
+    cleaning_report = clean_data(layout, full_ids)
+
+    # Fetch metadata
+    adata = load_raw_project(metadata, config, layout)
     adata, qc_report = quality_control(adata, config, layout)
     adata = preprocess(adata, config)
 

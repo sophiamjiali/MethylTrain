@@ -12,15 +12,15 @@ import logging
 import pandas as pd
 
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 from methyltrain.project.layout import ProjectLayout
-from methyltrain.project.audit_store import AuditStore
 
 logger = logging.getLogger(__name__)
 
 # =====| Public API |===========================================================
 
-def clean_data(layout: ProjectLayout, file_ids: list[str]) -> list[dict]:
+def clean_data(layout: ProjectLayout, file_ids: List[Tuple]) -> List[Dict]:
     """
     Cleans raw TCGA DNA methylation beta value .txt files by converting them 
     to .parquet, flattening directory structure and removing accessory files 
@@ -33,12 +33,12 @@ def clean_data(layout: ProjectLayout, file_ids: list[str]) -> list[dict]:
     ----------
     layout : ProjectLayout
         Object representing a project dataset directory layout.
-    file_ids : list[str]
-        List of file IDs to clean (based on download status).
+    file_ids : List[Tuple]
+        List of file IDs and file names to clean (based on download status).
 
     Returns
     -------
-    list[dict]
+    List[Dict]
         A cleaning report for auditing.
     """
 
@@ -48,8 +48,7 @@ def clean_data(layout: ProjectLayout, file_ids: list[str]) -> list[dict]:
     logger.info("=====| Attempting to Clean Raw Data |=====")
 
     report = []
-    for file_id, file_name, raw_data_path in file_ids:
-        if raw_data_path is not None: continue
+    for file_id, file_name in file_ids:
 
         # Name the .parquet file with its UUID, not its old file name
         txt_path = layout.raw_dir / file_id / file_name
@@ -62,7 +61,8 @@ def clean_data(layout: ProjectLayout, file_ids: list[str]) -> list[dict]:
         _remove_raw_artifact(txt_path)
         
         # Update the AuditStore with the parquet path
-        report.append({'file_id': file_id, 'raw_data_path': parquet_path})
+        report.append({'file_id': file_id, 
+                       'raw_data_path': str(parquet_path)})
 
     logger.info("=====| Successfully Cleaned Raw Data |=====")
 

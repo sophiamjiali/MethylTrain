@@ -47,6 +47,8 @@ def main():
 
     logger.info("\n[Completed MethylTrain]")
 
+    return
+
 
 def run_project_command(config: dict) -> None:
     """
@@ -77,6 +79,8 @@ def run_project_command(config: dict) -> None:
     save_project(results.adata, layout)
     logger.info("Successfully saved all artifacts and metadata.")
 
+    return
+
 
 def run_cohort_command(config: dict) -> None:
     """
@@ -99,6 +103,8 @@ def run_cohort_command(config: dict) -> None:
         save_cohort_val(results.val_adata, layout)
         save_cohort_test(results.test_adata, layout)
         logger.info("Successfully saved the cohort splits.")
+
+    return
 
 
 # =====| Internal Helpers |=====================================================

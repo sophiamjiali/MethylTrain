@@ -73,8 +73,7 @@ def quality_control(adata: ad.AnnData,
     layout.validate()
 
     logger.info("=====| Attempting to Perform Quality Control |=====")
-    toggles = config.get('toggles', {})
-    qc_report, flag = [{}], False
+    qc_report = [{}]
 
     # Fetch all toggles and perform each if indicated
     apply_sample_qc = config.get('toggles', {}).get('sample_qc', True)
@@ -97,12 +96,12 @@ def quality_control(adata: ad.AnnData,
     if apply_probe_qc:
 
         # Load the appropriate annotation provided by the package
-        annotation = load_annotation(
-            platform = adata.uns['platform'],
-            reference_genome = adata.uns['reference_genome']
-        )
-        logger.info(f"Loaded annotation for platform {adata.uns['platform']}"
-                    f" and reference genome {adata.uns['reference_genome']}.")
+        platform = adata.uns['data_source']['platform']
+        reference_genome = adata.uns['data_source']['reference_genome']
+
+        annotation = load_annotation(platform, reference_genome)
+        logger.info(f"Loaded annotation for platform {platform}"
+                    f" and reference genome {reference_genome}.")
         
         # Fetch relevant thresholds
         toggles_cfg = config.get('quality_control', {}).get('probe_qc', {})
@@ -280,7 +279,7 @@ def _probe_qc(adata: ad.AnnData,
     adata.var['missing_rate'] = missing_rate
     adata.var['qc_pass'] = pass_qc
 
-    adata = adata[pass_qc].copy()
+    adata = adata[:, pass_qc].copy()
 
     adata.uns.setdefault('qc', {})
     adata.uns['qc']['probe_qc'] = {

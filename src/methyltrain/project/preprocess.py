@@ -143,7 +143,7 @@ def _filter_variance(adata: ad.AnnData,
     adata.var['variance'] = probe_variance
     adata.var['mean'] = probe_mean
 
-    adata = adata[keep_mask].copy()
+    adata = adata[:, keep_mask].copy()
 
     adata.uns.setdefault('preprocess', {})
     adata.uns['preprocess']['filter_variance'] = {

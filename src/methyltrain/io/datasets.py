@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 # =====| Public API |===========================================================
 
 # ~~~~~| Loading |~~~~~
-def load_raw_project(config: dict, layout: ProjectLayout):
+def load_raw_project(metadata: pd.DataFrame, 
+                     config: dict, 
+                     layout: ProjectLayout) -> ad.AnnData:
     """
     Load the raw DNA methylation data of a project as an AnnData object from 
     `.parquet` files in the raw data directory. Column metadata is initialized 
@@ -44,6 +46,8 @@ def load_raw_project(config: dict, layout: ProjectLayout):
     
     Parameters
     ----------
+    metadata : pd.DataFrame
+        Project metadata queried from the GDC API.
     config: dict
         Configuration dictionary controlling workflow steps.
     layout : ProjectLayout
@@ -67,7 +71,7 @@ def load_raw_project(config: dict, layout: ProjectLayout):
 
     # Build the raw beta value matrix and align its metadata
     cpg_matrix = _build_beta_matrix(layout)
-    metadata = _build_metadata(layout)
+    metadata = metadata.sort_values(by = 'file_name')
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     adata = ad.AnnData(
@@ -87,7 +91,7 @@ def load_raw_project(config: dict, layout: ProjectLayout):
         },
         "data_source": {
             "platform": config.get("download", {}).get("platform"),
-            "reference_genome": config.get("reference_genome"),
+            "reference_genome": config['project'].get("reference_genome"),
         },
         "pipeline": {
             "state": "raw",
@@ -124,6 +128,7 @@ def load_processed_project(path: str) -> ad.AnnData:
 
 
 # ~~~~~| Saving |~~~~~
+
 def save_project(adata: ad.AnnData, layout: ProjectLayout) -> None:
     """
     Saves a project AnnData object.
@@ -213,16 +218,4 @@ def _build_beta_matrix(layout: ProjectLayout) -> pd.DataFrame:
 
     return cpg_matrix
 
-
-def _build_metadata(layout: ProjectLayout) -> pd.DataFrame:
-    """
-    Loads the project's metadata, aligning it with the raw beta value matrix.
-    """
-    metadata = load_metadata(layout)
-    metadata = metadata.sort_values(by = 'file_name')
-    metadata = metadata.loc[metadata['status'] == 'success']
-
-    return metadata
-
-
-
+# [END]

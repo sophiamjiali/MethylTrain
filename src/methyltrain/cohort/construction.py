@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from typing import List, Dict
+from pathlib import Path
 
 from methyltrain.cohort.layout import CohortLayout
 from methyltrain.io.datasets import load_processed_project
@@ -51,7 +52,13 @@ def define_cohort(project_list: List[str],
     logger.info("=====| Attempting to Construct the Cohort |=====")
 
     # Construct the cohort from the individual 
+    project_dir = config['paths']['project_dir']
+    project_list = [
+        project_dir / Path(p) / Path(f"{p}_adata.h5ad") 
+        for p in project_list
+    ]
     projects = [load_processed_project(path) for path in project_list]
+
     version = config['version']
     cohort = _aggregate_cohort(projects, version, layout)
     logger.info("Successfully defined the cohort structure.")
@@ -258,7 +265,7 @@ def _fetch_highest_resolution(projects: List[ad.AnnData]) -> str:
         The highest resolution platform present in the projects provided.
     """
 
-    project_array_types = [p['data_source']['platform'] for p in projects]
+    project_array_types = [p.uns['data_source']['platform'] for p in projects]
     highest_array = PLATFORM_PRIORITY[-1]
 
     for array_type in PLATFORM_PRIORITY:

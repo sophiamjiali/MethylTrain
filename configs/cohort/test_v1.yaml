@@ -3,7 +3,7 @@
 version: 0.1.0
 
 cohort:
-  id: test_cohort
+  id: test_v1
   seed: 42
 
 paths:

@@ -68,10 +68,10 @@ class CohortLayout:
         self.cohort_dir = Path(cohort_dir)
         
         # Define output object destinations
-        self.cohort_adata = self.cohort_dir / COHORT_ADATA
-        self.train_adata = self.cohort_dir / TRAIN_ADATA
-        self.val_adata = self.cohort_dir / VAL_ADATA
-        self.test_adata = self.cohort_adata / TEST_ADATA
+        self.cohort_adata = self.cohort_dir / f'{cohort_name}{COHORT_ADATA}'
+        self.train_adata = self.cohort_dir / f'{cohort_name}{TRAIN_ADATA}'
+        self.val_adata = self.cohort_dir / f'{cohort_name}{VAL_ADATA}'
+        self.test_adata = self.cohort_dir / f'{cohort_name}{TEST_ADATA}'
 
         # Define shortcut attributes for directories and files
         self.dir_paths = [self.cohort_dir]

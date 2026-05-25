@@ -10,3 +10,5 @@ COHORT_ADATA = "_adata.h5ad"
 TRAIN_ADATA = "_train_adata.h5ad"
 VAL_ADATA = "_val_adata.h5ad"
 TEST_ADATA = "_test_adata.h5ad"
+
+PROBE_SET = "_probe_set.csv"

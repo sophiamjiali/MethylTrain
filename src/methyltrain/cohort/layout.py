@@ -13,7 +13,8 @@ from methyltrain.constants.cohort_layout import (
     COHORT_ADATA,
     TRAIN_ADATA,
     VAL_ADATA,
-    TEST_ADATA
+    TEST_ADATA,
+    PROBE_SET
 )
 
 class CohortLayout:
@@ -40,6 +41,8 @@ class CohortLayout:
         Path for the validation-split cohort AnnData object.
     test_adata : str or Path, optional
         Path for the test-split cohort AnnData object.
+    probe_set : str or Path, optional
+        Path for the probe set .csv
 
     Attributes
     ----------
@@ -72,11 +75,12 @@ class CohortLayout:
         self.train_adata = self.cohort_dir / f'{cohort_name}{TRAIN_ADATA}'
         self.val_adata = self.cohort_dir / f'{cohort_name}{VAL_ADATA}'
         self.test_adata = self.cohort_dir / f'{cohort_name}{TEST_ADATA}'
+        self.probe_set = self.cohort_dir / f'{cohort_name}{PROBE_SET}'
 
         # Define shortcut attributes for directories and files
         self.dir_paths = [self.cohort_dir]
         self.file_paths = [self.cohort_adata, self.train_adata, 
-                           self.val_adata, self.test_adata]
+                           self.val_adata, self.test_adata, self.probe_set]
 
 
     @classmethod

@@ -27,7 +27,9 @@ project_list: [
 
 preprocessing:
 
-  "MAD_probe_filtering": 30000
+  "stratified_MAD_filter":
+    "n_probes": 30000
+    "top_n_per_class": 15000
 
   "batch_correction":
       "batch_key": "batch_id"

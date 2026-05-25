@@ -158,7 +158,7 @@ def _fit_winsorize(X: np.ndarray,
                    q_high: float) -> Tuple[np.ndarray, np.ndarray]:
     lower = np.quantile(X, q_low, axis = 0)
     upper = np.quantile(X, q_high, axis = 0)
-    return upper, lower
+    return lower, upper
 
 
 def _fit_scale(X: np.ndarray,) -> Tuple[np.ndarray, np.ndarray]:
@@ -180,8 +180,9 @@ def _apply_scale(X: np.ndarray,
     
     # Masc constant features
     valid = (max_ - min_) > 0
-    X_norm = np.zeros_like(X)
-    X_norm[:, valid] = (X[:, valid] - min_[valid]) / (max_[valid] - min_[valid])
+    X_norm = np.full_like(X, fill_value = -1.0)
+    X_norm[:, valid] = (2.0 * (X[:, valid] - min_[valid]) 
+                        / (max_[valid] - min_[valid]) - 1)
     return X_norm
 
 # [END]

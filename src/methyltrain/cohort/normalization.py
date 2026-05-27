@@ -89,9 +89,9 @@ def fit_normalization(adata: ad.AnnData, config: Dict) -> NormalizationState:
     if apply_winsorization:
 
         # Fetch the user configurations for winsorization
-        winsorize_cfg = config.get('preprocessing', {}).get('winsorize', {})
-        q_low = winsorize_cfg.get('lower', 1)
-        q_high = winsorize_cfg.get('upper', 99)
+        winsorize_cfg = config['preprocessing']['winsorization']
+        q_low = winsorize_cfg.get('lower', 0.01)
+        q_high = winsorize_cfg.get('upper', 0.99)
 
         lower, upper = _fit_winsorize(X, q_low, q_high)
         X_proc = _apply_winsorize(X, lower, upper)
@@ -158,7 +158,7 @@ def _fit_winsorize(X: np.ndarray,
                    q_high: float) -> Tuple[np.ndarray, np.ndarray]:
     lower = np.quantile(X, q_low, axis = 0)
     upper = np.quantile(X, q_high, axis = 0)
-    return upper, lower
+    return lower, upper
 
 
 def _fit_scale(X: np.ndarray,) -> Tuple[np.ndarray, np.ndarray]:
@@ -177,6 +177,12 @@ def _apply_winsorize(X: np.ndarray,
 def _apply_scale(X: np.ndarray,
                  min_: np.ndarray,
                  max_: np.ndarray) -> np.ndarray:
-    return (X - min_) / (max_ - min_)
+    
+    # Masc constant features
+    valid = (max_ - min_) > 0
+    X_norm = np.full_like(X, fill_value = -1.0)
+    X_norm[:, valid] = (2.0 * (X[:, valid] - min_[valid]) 
+                        / (max_[valid] - min_[valid]) - 1)
+    return X_norm
 
 # [END]

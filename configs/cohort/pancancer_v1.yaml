@@ -31,7 +31,7 @@ project_list: [
 
 "toggles":
     "MAD_probe_filtering": True
-    "batch_correction":    True
+    "batch_correction":    False
     "gene_aggregation":    False
     "winsorize":           True
     "scale":               True
@@ -39,7 +39,9 @@ project_list: [
 
 preprocessing:
 
-  "MAD_probe_filtering": 30000
+  "stratified_MAD_filter":
+    "n_probes": 30000
+    "top_n_per_class": 15000
 
   "batch_correction":
       "batch_key": "batch_id"

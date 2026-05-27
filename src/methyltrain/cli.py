@@ -18,7 +18,7 @@ from methyltrain.utils.logging import configure_logger
 from methyltrain.config.loader import load_config
 from methyltrain.project.pipeline import prepare_project
 from methyltrain.cohort.pipeline import prepare_cohort
-from methyltrain.io.write import save_manifest, save_metadata
+from methyltrain.io.write import save_manifest, save_metadata, save_probe_set
 from methyltrain.io.datasets import (
     save_project, 
     save_cohort,
@@ -104,6 +104,8 @@ def run_cohort_command(config: dict) -> None:
         save_cohort_test(results.test_adata, layout)
         logger.info("Successfully saved the cohort splits.")
 
+    # Always save the probe set after the cohort has been aggregated
+    save_probe_set(results.probe_set, layout)
     return
 
 

@@ -3,7 +3,7 @@
 version: 0.1.0
 
 cohort:
-  id: XXXX
+  id: test_v1
   seed: 42
 
 paths:
@@ -11,20 +11,8 @@ paths:
   project_dir: /Users/sophiali/Desktop/MethylTrain/output/projects
   
 project_list: [
-  "TCGA-BLCA",
-  "TCGA-BRCA",
   "TCGA-GBM",
-  "TCGA-HNSC",
-  "TCGA-KIRC",
-  "TCGA-LGG",
-  "TCGA-LIHC",
-  "TCGA-LUAD",
-  "TCGA-LUSC",
-  "TCGA-PAAD",
-  "TCGA-PRAD",
-  "TCGA-SKCM",
-  "TCGA-THCA",
-  "TCGA-UCEC"
+  "TCGA-SKCM"
 ]
 
 # =====| Processing Pipeline |==================================================

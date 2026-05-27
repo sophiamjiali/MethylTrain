@@ -34,7 +34,7 @@ def split(cohort: ad.AnnData,
         The train, validation, and test stratified splits as ad.AnnData objects.
     """
 
-    seed = config.get('cohort', {}).get('seed', 42)
+    seed = config['cohort']['seed']
 
     # Ensure obs_names are unique
     if not cohort.obs_names.is_unique:
@@ -45,7 +45,7 @@ def split(cohort: ad.AnnData,
     all_idx = np.arange(cohort.n_obs)
 
     # Fetch the splitting ratios and their relative ratio
-    train_ratio, val_ratio, test_ratio = config['split']
+    train_ratio, val_ratio, test_ratio = config['preprocessing']['split']
     if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
         raise ValueError("Split ratios must sum to 1.0.")
 
@@ -77,7 +77,7 @@ def split(cohort: ad.AnnData,
     test_adata = cohort[test_idx].copy()
 
     # Update each AnnData object's global metadata
-    split = config.get('split', [])
+    split = config['preprocessing']['split']
     train_adata = _update_metadata(train_adata, 'training', split[0])
     val_adata = _update_metadata(val_adata, 'validation', split[1])
     test_adata = _update_metadata(test_adata, 'testing', split[2])

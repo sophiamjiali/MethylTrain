@@ -60,11 +60,11 @@ def prepare_cohort(config: dict, layout: CohortLayout) -> CohortResult:
     # Define the cohort, optionally aggregating to the gene level
     cohort = define_cohort(project_list, config, layout)
 
-    # Define the feature space, returning the final probe set
-    cohort, probe_set = define_feature_space(cohort, config)
-
     # Align the distributions across projects (batch correction)
     cohort = align_distribution(cohort, config)
+
+    # Define the feature space, returning the final probe set
+    cohort, probe_set = define_feature_space(cohort, config)
 
     if toggles_cfg.get('split', True):
         

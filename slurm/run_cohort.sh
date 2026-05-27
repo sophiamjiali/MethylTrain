@@ -14,10 +14,11 @@ sbatch <<EOF
 #SBATCH --job-name=methyltrain_${COHORT_NAME}
 #SBATCH --output=logs/cohorts/${COHORT_NAME}_%j.out
 #SBATCH --error=logs/cohorts/${COHORT_NAME}_%j.err
-#SBATCH --time=03:00:00
-#SBATCH --nodes=2
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=20G
+#SBATCH --time=02:00:00
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --partition=build
+#SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 

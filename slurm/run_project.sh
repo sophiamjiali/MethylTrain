@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH --time=01:55:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=build

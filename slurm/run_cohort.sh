@@ -7,12 +7,6 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 
-
-#!/bin/bash
-#SBATCH --job-name=methyltrain_${COHORT_NAME}
-#SBATCH --output=${LOGS_DIR}/cohorts/${COHORT_NAME}_%j.out
-#SBATCH --error=${LOGS_DIR}/cohorts/${COHORT_NAME}_%j.err
-
 module load python3/3.12.11
 source /cluster/home/t144807uhn/envs/methyltrain-env/bin/activate
 

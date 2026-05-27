@@ -11,8 +11,8 @@ project:
   seed: 42
 
 paths:
-  gdc_client: /Users/sophiali/Desktop/MethylTrain/gdc-client
-  output_dir: /Users/sophiali/Desktop/MethylTrain/output
+  gdc_client: /cluster/home/t140812uhn/MethylTrain/gdc-client
+  output_dir: /cluster/projects/kumargroup/sophia/data
 
 # =====| Download Parameters |==================================================
 

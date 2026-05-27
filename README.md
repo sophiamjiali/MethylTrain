@@ -55,9 +55,7 @@ MethylTrain is designed to run on HPC clusters via SLURM, though the underlying 
 Downloads and preprocesses methylation data for a single TCGA project:
 
 ```bash
-sbatch slurm/prepare_project.sh <TCGA-PROJECT-CODE>
-# e.g.
-sbatch slurm/prepare_project.sh TCGA-GBM
+sbatch slurm/run_project.sh <TCGA-PROJECT-CODE>
 ```
 
 ### Prepare a Cohort
@@ -65,7 +63,17 @@ sbatch slurm/prepare_project.sh TCGA-GBM
 Assembles and preprocesses data across multiple projects into a unified cohort:
 
 ```bash
-sbatch slurm/prepare_cohort.sh <cohort>
+sbatch slurm/run_cohort.sh <COHORT-CODE>
+```
+
+### Example
+
+Prepares a single project on H4H:
+
+```bash
+source /cluster/projects/kumargroup/sophia/envs/methyltrain-env/bin/activate
+salloc -c 1 -t 2:00:00 --mem 8G -p build
+sbatch slurm/run_project.sh TCGA-GBM
 ```
 
 ---

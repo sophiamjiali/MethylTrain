@@ -8,13 +8,14 @@ if [ "$#" -lt 1 ]; then
 fi
 
 COHORT_NAME="$1"
+LOGS_DIR="/cluster/projects/kumargroup/sophia/logs"
 
 sbatch <<EOF
 #!/bin/bash
 #SBATCH --job-name=methyltrain_${COHORT_NAME}
-#SBATCH --output=logs/cohorts/${COHORT_NAME}_%j.out
-#SBATCH --error=logs/cohorts/${COHORT_NAME}_%j.err
-#SBATCH --time=02:00:00
+#SBATCH --output=${LOGS_DIR}/cohorts/${COHORT_NAME}_%j.out
+#SBATCH --error=${LOGS_DIR}/cohorts/${COHORT_NAME}_%j.err
+#SBATCH --time=01:55:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=build

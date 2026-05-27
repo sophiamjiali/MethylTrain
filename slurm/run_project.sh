@@ -21,8 +21,8 @@ sbatch <<EOF
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate methyltrain-env
+module load python3/3.12.11
+source /cluster/home/t144807uhn/envs/methyltrain-env/bin/activate
 
 python -m methyltrain.cli project \
     --name ${PROJECT_NAME}

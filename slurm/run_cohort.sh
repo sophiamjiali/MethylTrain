@@ -1,8 +1,6 @@
 #!/bin/bash
-#SBATCH --time=01:55:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=build
 #SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca

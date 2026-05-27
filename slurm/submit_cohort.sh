@@ -7,4 +7,4 @@ sbatch --job-name="methylC_${COHORT_NAME}" \
        --error="${LOGS_DIR}/${COHORT_NAME}_%j.err" \
        --time=02:00:00 \
        --partition=build \
-       run_cohort.sh ${COHORT_NAME}
+       slurm/run_cohort.sh ${COHORT_NAME}

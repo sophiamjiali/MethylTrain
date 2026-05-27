@@ -16,8 +16,8 @@ sbatch <<EOF
 #SBATCH --error=logs/projects/${PROJECT_NAME}_%j.err
 #SBATCH --time=03:00:00
 #SBATCH --nodes=2
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=20G
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 

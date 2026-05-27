@@ -146,7 +146,7 @@ def _resolve_config_path(command: str,
     if name:
         candidate = DEFAULT_CONFIG_DIR / command / f"{name}.yaml"
         if not candidate.exists():
-            raise FileNotFoundError(f"Named config not found: {name}")
+            raise FileNotFoundError(f"Named config not found: {candidate}")
         return candidate
 
     raise ValueError("Must provide either --config or --name")

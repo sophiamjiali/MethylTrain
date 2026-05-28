@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --output=/cluster/projects/kumargroup/sophia/logs/cohorts/%x_%j.out
-#SBATCH --error=/cluster/projects/kumargroup/sophia/logs/cohorts/%x_%j.err
+#SBATCH --output=/cluster/home/t144807uhn/logs/cohorts/%x_%j.out
+#SBATCH --error=/cluster/home/t144807uhn/logs/cohorts/%x_%j.err
 #SBATCH --time=01:55:00
 #SBATCH --partition=build
 #SBATCH --nodes=1

@@ -217,6 +217,12 @@ def _download_methylation(manifest: pd.DataFrame,
         if not raw_path.exists() and not clean_path.exists():
             missing_files.append(row)
 
+    # If all files were downloaded previously, return early
+    if not missing_files:
+        logger.info("All DNA Methylation was previously downloaded.")
+        logger.info("Skipping data download process.")
+        return
+
     remaining_files = pd.DataFrame(missing_files).reset_index()
     remaining_files = remaining_files.rename(columns = {'index': 'id', 
                                                         'file_name': 'filename'})

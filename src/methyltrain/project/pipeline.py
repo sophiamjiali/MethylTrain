@@ -67,12 +67,7 @@ def prepare_project(config: dict, layout: ProjectLayout) -> ProjectResult:
     adata, qc_report = quality_control(adata, config, layout)
     adata = preprocess(adata, config)
 
-    # Optionally remove all raw data
-    if config.get('clean_raw_data', False):
-        for file in layout.raw_dir.glob("*.parquet"): file.unlink()
-        logger.info("Successfully cleaned all raw data.")
-
-    logger.info("=====================================================")
+    logger.info("=====================================================\n")
 
     return ProjectResult(
         adata = adata,

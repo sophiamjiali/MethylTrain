@@ -79,6 +79,13 @@ def run_project_command(config: dict) -> None:
     save_project(results.adata, layout)
     logger.info("Successfully saved all artifacts and metadata.")
 
+    # Optionally remove all raw data
+    if config.get('clean_raw_data', False):
+        for file in layout.raw_dir.glob("*.parquet"): file.unlink()
+        logger.info("Successfully deleted all raw data artifacts.")
+
+    logger.info("=====================================================")
+
     return
 
 

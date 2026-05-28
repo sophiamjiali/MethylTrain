@@ -45,7 +45,9 @@ def clean_data(layout: ProjectLayout, file_ids: List[Tuple]) -> List[Dict]:
     # Verify the raw data directory exists
     layout.validate()
 
-    logger.info("=====| Attempting to Clean Raw Data |=====")
+    logger.info("~~~~~| Attempting to Clean Raw Data |~~~~~")
+
+    n_raw = n_clean = 0
 
     report = []
     for file_id, file_name in file_ids:
@@ -56,18 +58,23 @@ def clean_data(layout: ProjectLayout, file_ids: List[Tuple]) -> List[Dict]:
 
         # Don't clean the file if the processed file already exists
         if not parquet_path.exists():
-            
+
             if not txt_path.exists():
                 raise FileNotFoundError(f"Missing raw file: {txt_path}")
             
             _convert_txt_to_parquet(txt_path, parquet_path)
             _remove_raw_artifact(txt_path)
+            n_raw += 1
+
+        else: n_clean += 1
         
         # Update the AuditStore with the parquet path
         report.append({'file_id': file_id, 
                        'raw_data_path': str(parquet_path)})
-
-    logger.info("=====| Successfully Cleaned Raw Data |=====")
+        
+    logger.info(f"Detected {n_clean} previously cleaned files.")
+    logger.info(f"Cleaned {n_raw} raw files.")
+    logger.info("~~~~~| Successfully Cleaned Raw Data |~~~~~\n")
 
     return report
 

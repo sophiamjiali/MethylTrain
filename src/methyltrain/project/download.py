@@ -55,7 +55,7 @@ def download_methylation(config: Dict,
 
     layout.validate()
 
-    logger.info("=====| Attempting Project Methylation Download |=====")
+    logger.info("~~~~~| Attempting Project Methylation Download |~~~~~")
 
     # Query the GDC API for the project manifest and initialize the audit store
     manifest = _build_manifest(config)

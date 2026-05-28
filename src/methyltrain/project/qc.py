@@ -72,7 +72,7 @@ def quality_control(adata: ad.AnnData,
 
     layout.validate()
 
-    logger.info("=====| Attempting to Perform Quality Control |=====")
+    logger.info("~~~~~| Attempting to Perform Quality Control |~~~~~")
     qc_report = [{}]
 
     # Fetch all toggles and perform each if indicated
@@ -116,7 +116,7 @@ def quality_control(adata: ad.AnnData,
         adata.uns['pipeline']['state'] = 'processed'
         adata.uns['pipeline']['steps'].append('qc')
 
-    logger.info("=====| Successfully Performed Quality Control |=====")
+    logger.info("~~~~~| Successfully Performed Quality Control |~~~~~\n")
 
     return (adata, qc_report)
 

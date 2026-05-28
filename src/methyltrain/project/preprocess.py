@@ -51,7 +51,7 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         data at the CpG probe matrix level with updated metadata.
     """
 
-    logger.info("=====| Attempting to Perform Preprocessing |=====")
+    logger.info("~~~~~| Attempting to Perform Preprocessing |~~~~~")
 
     # Fetch all toggles and perform each if indictated
     apply_filter = config.get('toggles', {}).get('filter_variance', True)
@@ -92,7 +92,7 @@ def preprocess(adata: ad.AnnData, config: Dict) -> ad.AnnData:
         adata.uns['pipeline']['state'] = 'processed'
         adata.uns['pipeline']['steps'].append('preprocess')
 
-    logger.info("=====| Successfully Performed Preprocessing |=====")
+    logger.info("~~~~~| Successfully Performed Preprocessing |~~~~~\n")
 
     return adata
 

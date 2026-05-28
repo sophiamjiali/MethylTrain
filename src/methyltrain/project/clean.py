@@ -54,11 +54,14 @@ def clean_data(layout: ProjectLayout, file_ids: List[Tuple]) -> List[Dict]:
         txt_path = layout.raw_dir / file_id / file_name
         parquet_path = layout.raw_dir / f"{file_id}.parquet"
 
-        if not txt_path.exists():
-            raise FileNotFoundError(f"Missing raw file: {txt_path}")
-        
-        _convert_txt_to_parquet(txt_path, parquet_path)
-        _remove_raw_artifact(txt_path)
+        # Don't clean the file if the processed file already exists
+        if not parquet_path.exists():
+            
+            if not txt_path.exists():
+                raise FileNotFoundError(f"Missing raw file: {txt_path}")
+            
+            _convert_txt_to_parquet(txt_path, parquet_path)
+            _remove_raw_artifact(txt_path)
         
         # Update the AuditStore with the parquet path
         report.append({'file_id': file_id, 

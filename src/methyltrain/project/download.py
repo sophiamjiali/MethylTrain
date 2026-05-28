@@ -277,17 +277,20 @@ def _compute_download_report(manifest: pd.DataFrame,
     """
     Computes and returns a list containing the auditing report for each file 
     download status. This is later used to update the AuditStore in the public 
-    APIs.
+    APIs. Checks for both raw state or previously downloaded files.
     """
 
     report = []
 
-    for file_id, row in manifest.iterrows():
-        filepath = layout.raw_dir / str(file_id) / row['file_name']
-        status = 1 if filepath.exists() else 0
+    for idx, row in manifest.iterrows():
+
+        # Check for both raw and cleaned file types
+        raw_path = layout.raw_dir / str(idx) / row['file_name']
+        clean_path = layout.raw_dir / (str(idx) + '.parquet')
+        status = 1 if raw_path.exists() or clean_path.exists() else 0
 
         report.append({
-            "file_id": str(file_id),
+            "file_id": str(idx),
             "file_name": row.get("file_name", ""),
             "download_status": status
         })

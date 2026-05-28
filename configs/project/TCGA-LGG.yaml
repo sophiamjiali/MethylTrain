@@ -11,9 +11,9 @@ project:
   seed: 42
 
 paths:
-  gdc_client: /cluster/home/t140812uhn/MethylTrain/gdc-client
-  output_dir: /cluster/home/t140812uhn/data
-  
+  gdc_client: /cluster/home/t144807uhn/MethylTrain/gdc-client
+  output_dir: /cluster/home/t144807uhn/data
+
 # =====| Download Parameters |==================================================
 
 # Fields to filter the DNA Methylation API data query

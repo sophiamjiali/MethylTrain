@@ -7,8 +7,8 @@ cohort:
   seed: 42
 
 paths:
-  output_dir: /cluster/home/t140812uhn/data
-  project_dir: /cluster/home/t140812uhn/data/projects
+  output_dir: /cluster/home/t144807uhn/data
+  project_dir: /cluster/home/t144807uhn/data/projects
   
 project_list: [
   "TCGA-BLCA",

@@ -76,6 +76,7 @@ def load_raw_project(metadata: pd.DataFrame,
     cpg_matrix, probe_ids = _build_beta_matrix(layout)
     logger.info("Successfully loaded the raw beta value files.")
     metadata = metadata.sort_values(by = 'file_name').reset_index(drop = True)
+    metadata.index = metadata.index.astype(str)
     
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     X = cpg_matrix.T
@@ -83,7 +84,7 @@ def load_raw_project(metadata: pd.DataFrame,
     adata = ad.AnnData(
         X = X,
         obs = metadata,
-        var = pd.DataFrame(index = probe_ids.astype(str))
+        var = pd.DataFrame(index = pd.Index(probe_ids.astype(str), dtype = str))
     )
 
     logger.info("Successfully constructed the AnnData object.")
@@ -110,7 +111,7 @@ def load_raw_project(metadata: pd.DataFrame,
         },
     }
 
-    logger.info("~~~~~| Successfully Loaded Raw Project |~~~~~")
+    logger.info("~~~~~| Successfully Loaded Raw Project |~~~~~\n")
 
     return adata
 

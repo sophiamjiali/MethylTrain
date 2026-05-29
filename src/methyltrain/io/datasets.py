@@ -14,11 +14,9 @@ import anndata as ad
 import numpy as np
 
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
 
 from methyltrain.project.layout import ProjectLayout
 from methyltrain.cohort.layout import CohortLayout
-from methyltrain.io.read import load_metadata, _load_sample
 
 logger = logging.getLogger(__name__)
 
@@ -68,14 +66,17 @@ def load_raw_project(metadata: pd.DataFrame,
         If the project directory path does not exist or is empty.
     """
 
+    logger.info("~~~~~| Attempting to Load Raw Project |~~~~~")
+
     # Verify all directories exist and are accessible
     layout.validate()
     _validate_directories(layout)
 
     # Build the raw beta value matrix and align its metadata
     cpg_matrix, probe_ids = _build_beta_matrix(layout)
-    metadata = metadata.sort_values(by = 'file_name')
-
+    logger.info("Successfully loaded the raw beta value files.")
+    metadata = metadata.sort_values(by = 'file_name').reset_index(drop = True)
+    
     # Initialize the CpG matrix as an AnnData object with aligned metadata
     X = cpg_matrix.T
 
@@ -84,6 +85,8 @@ def load_raw_project(metadata: pd.DataFrame,
         obs = metadata,
         var = pd.DataFrame(index = probe_ids.astype(str))
     )
+
+    logger.info("Successfully constructed the AnnData object.")
 
     del cpg_matrix
     gc.collect()
@@ -106,6 +109,8 @@ def load_raw_project(metadata: pd.DataFrame,
             "steps": [],
         },
     }
+
+    logger.info("~~~~~| Successfully Loaded Raw Project |~~~~~")
 
     return adata
 
@@ -217,29 +222,37 @@ def _build_beta_matrix(layout: ProjectLayout):
     # Load all beta values in parallel as a list of Pandas DataFrames
     files = sorted(layout.raw_dir.glob("*parquet"))
 
-    # Determine global CpG index
-    probe_sets = []
+    logger.info(f"Detected {len(files)} raw .parquet files.")
+
+    # Build a global CpG index
+    probe_set = set()
     for f in files:
         df = pd.read_parquet(f, columns = ['probe_id'])
-        probe_sets.append(df['probe_id'].to_numpy())
+        probe_set.update(df['probe_id'].values)
+        del df
 
-    # Map CpG to row position
-    global_index = pd.Index(pd.unique(np.concatenate(probe_sets)))
+    global_index = pd.Index(sorted(probe_set))
+
+    # Initialize a look-up table for CpG to row position
     n_rows, n_cols = len(global_index), len(files)
-    
+    logger.info(f"Identified {n_rows} probes and {n_cols} samples.")
+
     probe_to_row = pd.Series(
         np.arange(n_rows, dtype = np.int32),
         index = global_index
     )
+
+    logger.info("Successfully built the CpG-to-row look-up mapping.")
     
     # Preallocate the final matrix
-    matrix = np.full((n_rows, n_cols), np.nan, dtype = np.float32)
+    matrix = np.empty((n_rows, n_cols), dtype = np.float32)
+    matrix[:] = np.nan
 
     # Fill the matrix column-by-column
     for j, f in enumerate(files):
-        df = pd.read_parquet(f)
+        df = pd.read_parquet(f, columns = ['probe_id', 'beta_value'])
 
-        probes = df['probe_id'].to_numpy()
+        probes = df['probe_id'].to_numpy(copy = False)
         values = df['beta_value'].to_numpy(dtype = np.float32, copy = False)
 
         # Vectorized index mapping

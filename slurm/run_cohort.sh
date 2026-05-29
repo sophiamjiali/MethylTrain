@@ -5,7 +5,7 @@
 #SBATCH --partition=build
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
+#SBATCH --mem=12G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 

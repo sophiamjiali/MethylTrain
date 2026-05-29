@@ -7,6 +7,7 @@
 # ==============================================================================
 
 import logging
+import gc
 
 import pandas as pd
 import anndata as ad
@@ -43,6 +44,8 @@ def load_raw_project(metadata: pd.DataFrame,
     Default behaviour resolves case-level duplicates (aliquots) by retaining 
     only the first replicate. Performing mean aggregation across aliquots is not
     advised.
+
+    Memory usage is optimized for a ~8 GB constraint.
     
     Parameters
     ----------
@@ -70,15 +73,20 @@ def load_raw_project(metadata: pd.DataFrame,
     _validate_directories(layout)
 
     # Build the raw beta value matrix and align its metadata
-    cpg_matrix = _build_beta_matrix(layout)
+    cpg_matrix, probe_ids = _build_beta_matrix(layout)
     metadata = metadata.sort_values(by = 'file_name')
 
     # Initialize the CpG matrix as an AnnData object with aligned metadata
+    X = cpg_matrix.T
+
     adata = ad.AnnData(
-        X = cpg_matrix.T.values.astype(np.float32),
+        X = X,
         obs = metadata,
-        var = pd.DataFrame(index = cpg_matrix.index.astype(str))
+        var = pd.DataFrame(index = probe_ids.astype(str))
     )
+
+    del cpg_matrix
+    gc.collect()
 
     # Initialize global metadata for the project
     adata.uns = {
@@ -98,7 +106,7 @@ def load_raw_project(metadata: pd.DataFrame,
             "steps": [],
         },
     }
-    
+
     return adata
 
 def load_processed_project(path: str) -> ad.AnnData:
@@ -200,22 +208,46 @@ def _validate_directories(layout: ProjectLayout) -> None:
     return
 
 
-def _build_beta_matrix(layout: ProjectLayout) -> pd.DataFrame:
+def _build_beta_matrix(layout: ProjectLayout):
     """
     Loads all beta values in parallel, concatenating upon the index to build a 
     matrix of raw balues.
     """
 
     # Load all beta values in parallel as a list of Pandas DataFrames
-    files = [f for f in layout.raw_dir.iterdir() if f.suffix == ".parquet"]
+    files = sorted(layout.raw_dir.glob("*parquet"))
 
-    with ThreadPoolExecutor() as ex:
-        sample_beta_values = list(ex.map(_load_sample, files))
+    # Determine global CpG index
+    probe_sets = []
+    for f in files:
+        df = pd.read_parquet(f, columns = ['probe_id'])
+        probe_sets.append(df['probe_id'].to_numpy())
 
-    # Concatenate on the index to build a matrix
-    cpg_matrix = pd.concat(sample_beta_values, axis = 1, join = "outer")
-    cpg_matrix = cpg_matrix.sort_index()
+    # Map CpG to row position
+    global_index = pd.Index(pd.unique(np.concatenate(probe_sets)))
+    n_rows, n_cols = len(global_index), len(files)
+    
+    probe_to_row = pd.Series(
+        np.arange(n_rows, dtype = np.int32),
+        index = global_index
+    )
+    
+    # Preallocate the final matrix
+    matrix = np.full((n_rows, n_cols), np.nan, dtype = np.float32)
 
-    return cpg_matrix
+    # Fill the matrix column-by-column
+    for j, f in enumerate(files):
+        df = pd.read_parquet(f)
+
+        probes = df['probe_id'].to_numpy()
+        values = df['beta_value'].to_numpy(dtype = np.float32, copy = False)
+
+        # Vectorized index mapping
+        row_idx = probe_to_row.loc[probes].to_numpy()
+        matrix[row_idx, j] = values
+
+        del df
+        
+    return matrix, global_index
 
 # [END]

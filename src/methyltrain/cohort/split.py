@@ -36,11 +36,6 @@ def split(cohort: ad.AnnData,
 
     seed = config['cohort']['seed']
 
-    # Ensure obs_names are unique
-    if not cohort.obs_names.is_unique:
-        cohort.obs_names = cohort.obs['file_id'].astype(str).tolist()
-        cohort.obs_names_make_unique()
-
     # Convert obs_names to integer positions for splitting
     all_idx = np.arange(cohort.n_obs)
 

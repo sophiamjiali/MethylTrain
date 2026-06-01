@@ -52,8 +52,8 @@ def prepare_cohort(config: dict, layout: CohortLayout) -> CohortResult:
     logger.info(f"Input Project Directory: {paths_cfg.get('project_dir', '')}")
     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     logger.info("~~~~~| Input Project Details |~~~~~")
-    logger.info("Loaded %d projects:\n- %s",
-                 len(project_list), "\n- ".join(project_list))
+    logger.info(f"Loaded {len(project_list)} projects:")
+    for p in project_list: logger.info(f"- {p}")
     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     logger.info("-----| Beginning Pipeline |-----\n")
 

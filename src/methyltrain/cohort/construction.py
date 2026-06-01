@@ -112,13 +112,19 @@ def _aggregate_cohort(projects: List[ad.AnnData],
     ad.AnnData
         Aggregated cohort AnnData object at the CpG probe x sample level.
     """
+
+    # Detect any non-unique file IDs in each project
+    for p in projects:
+        if not p.obs_names.is_unique:
+            logger.info(f"Detected non-unique file ID in project {p}.")
     
     # Concatenate all projects together, keeping the common set of probes
     cohort = ad.concat(
         projects,
         join = "inner",
         label = "project_id",
-        keys = [p.uns['provenance']['project_id'] for p in projects]
+        keys = [p.uns['provenance']['project_id'] for p in projects],
+        index_unique = "-"
     )
 
     # Assert that all projects are the same conversion (beta or M-values)

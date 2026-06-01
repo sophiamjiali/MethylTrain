@@ -2,10 +2,10 @@
 #SBATCH --output=/cluster/home/t144807uhn/logs/cohorts/%x/%x_%j.out
 #SBATCH --error=/cluster/home/t144807uhn/logs/cohorts/%x/%x_%j.err
 #SBATCH --time=01:55:00
-#SBATCH --partition=build
+#SBATCH --partition=himem
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=12G
+#SBATCH --mem=32G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 

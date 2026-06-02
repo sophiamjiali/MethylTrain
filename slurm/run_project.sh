@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --output=/cluster/home/t144807uhn/logs/projects/%x/%x_%j.out
-#SBATCH --error=/cluster/home/t144807uhn/logs/projects/%x/%x_%j.err
+#SBATCH --output=/cluster/home/t144807uhn/logs/MethylTrain/projects/%x/%x_%j.out
+#SBATCH --error=/cluster/home/t144807uhn/logs/MethylTrain/projects/%x/%x_%j.err
 #SBATCH --time=01:55:00
 #SBATCH --partition=build
 #SBATCH --nodes=1
@@ -10,7 +10,7 @@
 #SBATCH --mail-user=sophiamjia.li@mail.utoronto.ca
 
 # Make the project-specific logs directory
-mkdir -p /cluster/home/t144807uhn/logs/projects/$1
+mkdir -p /cluster/home/t144807uhn/logs/MethylTrain/projects/$1
 
 # Activate the virtual environment
 module load python3/3.12.11

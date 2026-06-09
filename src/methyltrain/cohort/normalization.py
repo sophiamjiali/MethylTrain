@@ -27,9 +27,9 @@ class NormalizationState:
     lower_bounds: Optional[np.ndarray] = None
     upper_bounds: Optional[np.ndarray] = None
 
-    # Scaling
-    scale_min: Optional[np.ndarray] = None
-    scale_max: Optional[np.ndarray] = None
+    # Z-Score Scaling
+    mean: Optional[np.ndarray] = None
+    std: Optional[np.ndarray] = None
 
 
 
@@ -39,8 +39,7 @@ def normalize(adata: ad.AnnData,
               config: Dict, 
               norm_state = None) -> Tuple[ad.AnnData, NormalizationState]:
     """
-    Applies global winsorization and Min-Max scaling to map M-values to the 
-    [-1, 1] range optimized for VAE/Diffusion gradients.
+    Applies global winsorization and Z-Score scaling to map M-values.
 
     Winsorization should only be performed at the data level the machine 
     learning model will encounter (i.e. gene-level), as clipping extreme values 
@@ -66,7 +65,7 @@ def normalize(adata: ad.AnnData,
 
     if norm_state is None:
         norm_state = fit_normalization(adata, config)
-        logger.info("Successfully fit for nornalization.")
+        logger.info("Successfully fit for normalization.")
 
     
     adata = apply_normalization(adata, norm_state)
@@ -83,7 +82,7 @@ def fit_normalization(adata: ad.AnnData, config: Dict) -> NormalizationState:
     X = np.asarray(adata.X)
 
     lower = upper = None
-    min_ = max_ = None
+    mean = std = None
 
     # Optionally fit and apply winsorization (for later use by scaling)
     if apply_winsorization:
@@ -95,19 +94,22 @@ def fit_normalization(adata: ad.AnnData, config: Dict) -> NormalizationState:
 
         lower, upper = _fit_winsorize(X, q_low, q_high)
         X_proc = _apply_winsorize(X, lower, upper)
+
+        logger.info(f"Fit winsorization with lower {lower} and upper {upper}")
     else: X_proc = X
 
     # Optionally fit the Min-Max scaling to the winsorized data
     if apply_scaling:
-        min_, max_ = _fit_scale(X_proc)
+        mean, std = _fit_standardize(X_proc)
+        logger.info(f"Fit Z-score with mean {mean} and std {std}")
 
     return NormalizationState(
         winsorize_enabled = apply_winsorization,
         scale_enabled = apply_scaling,
         lower_bounds = lower,
         upper_bounds = upper,
-        scale_min = min_,
-        scale_max = max_
+        mean = mean,
+        std = std
     )
 
 
@@ -117,6 +119,7 @@ def apply_normalization(adata: ad.AnnData,
 
     if state.winsorize_enabled or state.scale_enabled:
         adata.uns.setdefault('normalization', {})
+        adata.uns['pipeline']['state'] = 'processed'
 
     if state.winsorize_enabled:
 
@@ -125,6 +128,7 @@ def apply_normalization(adata: ad.AnnData,
                 "Winsorization bounds are missing from normalization state."
             )
         
+        adata.uns['pipeline']['steps'].append("winsorization")
         adata.uns['normalization']['winsorization'] = {
             'lower_bound': state.lower_bounds,
             'upper_bound': state.upper_bounds
@@ -134,18 +138,19 @@ def apply_normalization(adata: ad.AnnData,
 
     if state.scale_enabled:
 
-        if state.scale_min is None or state.scale_max is None:
+        if state.mean is None or state.std is None:
             raise ValueError(
                 "Scaling parameters are missing from normalization state."
             )
         
+        adata.uns['pipeline']['steps'].append("scaling")
         adata.uns.setdefault('normalization', {})
         adata.uns['normalization']['scaling'] = {
-            'min': state.scale_min,
-            'max': state.scale_max
+            'mean': state.mean,
+            'std': state.std
         }
 
-        X = _apply_scale(X, state.scale_min, state.scale_max)
+        X = _apply_standardize(X, state.mean, state.std)
 
     adata = adata.copy()
     adata.X = X
@@ -161,11 +166,11 @@ def _fit_winsorize(X: np.ndarray,
     return lower, upper
 
 
-def _fit_scale(X: np.ndarray,) -> Tuple[np.ndarray, np.ndarray]:
-    min_ = np.min(X, axis = 0)
-    max_ = np.max(X, axis = 0)
-    max_ = np.where(max_ == min_, min_ + 1e-8, max_)
-    return min_, max_
+def _fit_standardize(X: np.ndarray,) -> Tuple[np.ndarray, np.ndarray]:
+    mean = np.mean(X, axis=0)
+    std = np.std(X, axis=0)
+    std = np.where(std == 0, 1.0, std)
+    return mean, std
 
 
 def _apply_winsorize(X: np.ndarray,
@@ -174,15 +179,9 @@ def _apply_winsorize(X: np.ndarray,
     return np.clip(X, lower, upper)
 
 
-def _apply_scale(X: np.ndarray,
-                 min_: np.ndarray,
-                 max_: np.ndarray) -> np.ndarray:
-    
-    # Masc constant features
-    valid = (max_ - min_) > 0
-    X_norm = np.full_like(X, fill_value = -1.0)
-    X_norm[:, valid] = (2.0 * (X[:, valid] - min_[valid]) 
-                        / (max_[valid] - min_[valid]) - 1)
-    return X_norm
+def _apply_standardize(X: np.ndarray, 
+                       mean: np.ndarray,
+                       std: np.ndarray) -> np.ndarray:
+    return (X - mean) / std
 
 # [END]

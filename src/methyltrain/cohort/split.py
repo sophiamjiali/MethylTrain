@@ -85,7 +85,7 @@ def split(cohort: ad.AnnData,
 def _update_metadata(adata: ad.AnnData, split: str, percent: str) -> ad.AnnData:
     adata.uns['pipeline']['state'] = 'processed'
     adata.uns['pipeline']['steps'].append('split')
-    adata.uns['split'] = {}
+    adata.uns.setdefault('split', {})
     adata.uns['split']['type'] = split
     adata.uns['split']['percentage'] = percent
     return adata
